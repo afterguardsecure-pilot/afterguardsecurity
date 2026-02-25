@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AfterGuard — Confirm Your Email</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root {
+    --slate-950: #0a0c0f;
+    --slate-900: #0f1318;
+    --slate-800: #171d26;
+    --slate-600: #374151;
+    --slate-400: #9ca3af;
+    --slate-300: #d1d5db;
+    --slate-200: #e5e7eb;
+    --gold-400: #d4a853;
+    --gold-300: #e2bb72;
+    --gold-200: #f0d4a0;
+    --gold-500: #b8922e;
+    --sage-light: #a3c4b5;
+    --danger: #e57373;
+  }
+
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+
+  body {
+    background: var(--slate-950);
+    color: var(--slate-300);
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    display: flex; align-items: center; justify-content: center;
+    min-height: 100vh;
+    position: relative; overflow: hidden;
+  }
+
+  /* Background grid + glow */
+  body::before {
+    content: '';
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background-image:
+      linear-gradient(rgba(212,168,83,0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(212,168,83,0.025) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none; z-index: 0;
+  }
+  body::after {
+    content: '';
+    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    width: 700px; height: 500px;
+    background: radial-gradient(ellipse, rgba(212,168,83,0.07) 0%, transparent 65%);
+    pointer-events: none; z-index: 0;
+  }
+
+  .card {
+    position: relative; z-index: 1;
+    background: var(--slate-900);
+    border: 1px solid rgba(212,168,83,0.15);
+    border-radius: 10px;
+    padding: 52px 48px;
+    width: 100%; max-width: 480px;
+    text-align: center;
+    box-shadow: 0 32px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(212,168,83,0.05);
+    animation: fadeUp 0.6s ease both;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Logo */
+  .logo {
+    display: inline-flex; align-items: center; gap: 10px;
+    text-decoration: none; margin-bottom: 40px;
+  }
+  .logo-shield {
+    width: 34px; height: 34px;
+    background: rgba(212,168,83,0.1); border: 1px solid rgba(212,168,83,0.25);
+    border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 15px;
+  }
+  .logo-text {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 18px; font-weight: 300; letter-spacing: 0.12em; color: var(--gold-300);
+  }
+
+  /* Status icon */
+  .status-icon {
+    width: 72px; height: 72px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px; margin: 0 auto 28px;
+    transition: all 0.4s;
+  }
+  .status-icon.loading {
+    background: rgba(212,168,83,0.08);
+    border: 1px solid rgba(212,168,83,0.2);
+    animation: spin-glow 1.4s ease-in-out infinite;
+  }
+  .status-icon.success {
+    background: rgba(45,106,79,0.15);
+    border: 1px solid rgba(163,196,181,0.3);
+    box-shadow: 0 0 24px rgba(76,175,134,0.15);
+  }
+  .status-icon.error {
+    background: rgba(192,57,43,0.12);
+    border: 1px solid rgba(229,115,115,0.25);
+  }
+
+  @keyframes spin-glow {
+    0%, 100% { box-shadow: 0 0 12px rgba(212,168,83,0.2); transform: scale(1); }
+    50%       { box-shadow: 0 0 24px rgba(212,168,83,0.35); transform: scale(1.04); }
+  }
+
+  .eyebrow {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase;
+    color: var(--gold-400); margin-bottom: 10px;
+  }
+
+  h1 {
+    font-size: 2rem; font-weight: 300; color: var(--slate-200);
+    line-height: 1.2; margin-bottom: 12px;
+  }
+  h1 em { font-style: italic; color: var(--gold-300); }
+
+  .sub {
+    font-size: 0.95rem; font-weight: 300; color: var(--slate-400);
+    line-height: 1.7; margin-bottom: 36px; max-width: 340px; margin-left: auto; margin-right: auto;
+  }
+
+  /* Progress bar */
+  .progress-bar {
+    height: 2px; background: rgba(255,255,255,0.06);
+    border-radius: 2px; margin-bottom: 36px; overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%; width: 0%;
+    background: linear-gradient(90deg, var(--gold-500), var(--gold-300));
+    border-radius: 2px;
+    transition: width 0.4s ease;
+  }
+
+  /* Checklist */
+  .checklist {
+    list-style: none; text-align: left;
+    border: 1px solid rgba(212,168,83,0.08);
+    border-radius: 5px; overflow: hidden;
+    margin-bottom: 32px;
+  }
+  .check-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    font-size: 0.875rem; font-weight: 300;
+    opacity: 0.4; transition: opacity 0.4s;
+  }
+  .check-item:last-child { border-bottom: none; }
+  .check-item.done { opacity: 1; }
+  .check-dot {
+    width: 18px; height: 18px; border-radius: 50%; flex-shrink: 0;
+    border: 1px solid rgba(212,168,83,0.2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; transition: all 0.3s;
+  }
+  .check-item.done .check-dot {
+    background: rgba(76,175,134,0.15);
+    border-color: rgba(163,196,181,0.4);
+    color: var(--sage-light);
+  }
+
+  /* CTA button */
+  .cta-btn {
+    display: block; width: 100%;
+    padding: 14px 20px;
+    background: var(--gold-500); color: var(--slate-950);
+    border: 1px solid var(--gold-400); border-radius: 3px;
+    font-family: 'DM Mono', monospace; font-size: 11px;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    cursor: pointer; text-decoration: none;
+    transition: all 0.2s; font-weight: 400; text-align: center;
+    margin-bottom: 16px;
+  }
+  .cta-btn:hover { background: var(--gold-400); }
+  .cta-btn.ghost {
+    background: transparent;
+    border: 1px solid rgba(212,168,83,0.18);
+    color: var(--slate-400);
+  }
+  .cta-btn.ghost:hover { border-color: rgba(212,168,83,0.35); color: var(--gold-300); }
+
+  .footer-note {
+    font-family: 'DM Mono', monospace; font-size: 9px;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--slate-600); margin-top: 24px;
+  }
+  .footer-note a { color: var(--gold-500); text-decoration: none; }
+  .footer-note a:hover { color: var(--gold-400); }
+
+  /* Error state hidden by default */
+  .error-state { display: none; }
+  .success-state { display: none; }
+  .loading-state { display: block; }
+</style>
+</head>
+<body>
+
+<div class="card" id="card">
+
+  <a href="index.html" class="logo">
+    <div class="logo-shield">🛡</div>
+    <span class="logo-text">AfterGuard</span>
+  </a>
+
+  <!-- LOADING STATE -->
+  <div class="loading-state" id="loading-state">
+    <div class="status-icon loading" id="status-icon">⏳</div>
+    <div class="eyebrow">Email Verification</div>
+    <h1>Confirming your <em>account</em></h1>
+    <p class="sub">Please wait while we securely verify your email address and activate your AfterGuard portal access.</p>
+    <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+    <ul class="checklist">
+      <li class="check-item" id="step-1">
+        <span class="check-dot" id="dot-1"></span>
+        Verifying confirmation token
+      </li>
+      <li class="check-item" id="step-2">
+        <span class="check-dot" id="dot-2"></span>
+        Activating your secure account
+      </li>
+      <li class="check-item" id="step-3">
+        <span class="check-dot" id="dot-3"></span>
+        Setting up your estate portal
+      </li>
+    </ul>
+  </div>
+
+  <!-- SUCCESS STATE -->
+  <div class="success-state" id="success-state">
+    <div class="status-icon success">✓</div>
+    <div class="eyebrow">Verification Complete</div>
+    <h1>You're <em>confirmed</em></h1>
+    <p class="sub">Your email has been verified and your AfterGuard account is now fully active. You'll be redirected to sign in shortly.</p>
+    <a href="afterguard-auth.html" class="cta-btn">Sign In to Your Portal →</a>
+    <a href="index.html" class="cta-btn ghost">Back to Home</a>
+  </div>
+
+  <!-- ERROR STATE -->
+  <div class="error-state" id="error-state">
+    <div class="status-icon error">⚠</div>
+    <div class="eyebrow">Verification Issue</div>
+    <h1>Link <em>expired</em></h1>
+    <p class="sub" id="error-msg">This confirmation link has expired or has already been used. Please request a new one from the sign-in page.</p>
+    <a href="afterguard-auth.html" class="cta-btn">Return to Sign In</a>
+    <a href="index.html" class="cta-btn ghost">Back to Home</a>
+  </div>
+
+  <p class="footer-note">
+    Need help? <a href="mailto:afterguardsecure@gmail.com">afterguardsecure@gmail.com</a>
+  </p>
+
+</div>
+
+<script>
+  const { createClient } = supabase;
+  const sb = createClient(
+    'https://bzscltliqeijqskcdajp.supabase.co',
+    'sb_publishable_LFfDCNnaH2PDo0auIBn9oA_td5dL5bD'
+  );
+
+  function showState(state) {
+    document.getElementById('loading-state').style.display = state === 'loading' ? 'block' : 'none';
+    document.getElementById('success-state').style.display = state === 'success' ? 'block' : 'none';
+    document.getElementById('error-state').style.display   = state === 'error'   ? 'block' : 'none';
+  }
+
+  function markStep(num) {
+    const item = document.getElementById('step-' + num);
+    const dot  = document.getElementById('dot-' + num);
+    if (item) item.classList.add('done');
+    if (dot)  dot.textContent = '✓';
+    // update progress bar
+    document.getElementById('progress-fill').style.width = (num / 3 * 100) + '%';
+  }
+
+  async function handleConfirmation() {
+    // Supabase puts the token in the URL hash or as query params
+    // depending on the version — handle both
+    const hash   = window.location.hash.substring(1);
+    const search = window.location.search.substring(1);
+    const params = new URLSearchParams(hash || search);
+
+    const accessToken  = params.get('access_token');
+    const refreshToken = params.get('refresh_token');
+    const type         = params.get('type'); // 'signup' or 'recovery'
+    const tokenHash    = params.get('token_hash');
+    const errorDesc    = params.get('error_description');
+
+    // If Supabase sent an error in the URL
+    if (errorDesc) {
+      showState('error');
+      document.getElementById('error-msg').textContent = decodeURIComponent(errorDesc);
+      return;
+    }
+
+    // Animate step 1
+    await delay(600);
+    markStep(1);
+
+    try {
+      let result;
+
+      if (accessToken && refreshToken) {
+        // Supabase v2 implicit flow — set session directly
+        result = await sb.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+      } else if (tokenHash && type) {
+        // Supabase v2 PKCE flow
+        result = await sb.auth.verifyOtp({ token_hash: tokenHash, type });
+      } else {
+        // No tokens found — might already be confirmed or link is bad
+        const { data: { session } } = await sb.auth.getSession();
+        if (session) {
+          result = { data: { session }, error: null };
+        } else {
+          throw new Error('No confirmation token found in this URL. The link may have expired.');
+        }
+      }
+
+      if (result.error) throw result.error;
+
+      // Animate steps 2 & 3
+      await delay(500);
+      markStep(2);
+      await delay(500);
+      markStep(3);
+      await delay(400);
+
+      showState('success');
+
+      // Auto-redirect to sign in after 3 seconds
+      setTimeout(() => {
+        window.location.href = 'afterguard-auth.html';
+      }, 3000);
+
+    } catch (err) {
+      showState('error');
+      document.getElementById('error-msg').textContent =
+        err.message || 'Something went wrong. Please try signing up again or contact support.';
+    }
+  }
+
+  function delay(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  // Run on page load
+  handleConfirmation();
+</script>
+</body>
+</html>
