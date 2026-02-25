@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AfterGuard — Sign In</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --slate-950: #0a0c0f;
+    --slate-900: #0f1318;
+    --slate-800: #171d26;
+    --slate-700: #1f2937;
+    --slate-600: #374151;
+    --slate-400: #9ca3af;
+    --slate-300: #d1d5db;
+    --slate-200: #e5e7eb;
+    --gold-400: #d4a853;
+    --gold-300: #e2bb72;
+    --gold-200: #f0d4a0;
+    --gold-500: #b8922e;
+    --sage: #7a9e8e;
+    --sage-light: #a3c4b5;
+    --danger: #e57373;
+  }
+
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  html { height: 100%; }
+
+  body {
+    background: var(--slate-950);
+    color: var(--slate-300);
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  /* ── LEFT PANEL ── */
+  .left-panel {
+    background: var(--slate-900);
+    border-right: 1px solid rgba(212,168,83,0.1);
+    display: flex; flex-direction: column;
+    justify-content: space-between;
+    padding: 48px;
+    position: relative; overflow: hidden;
+  }
+
+  .left-panel::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    background:
+      radial-gradient(ellipse 70% 50% at 50% 60%, rgba(212,168,83,0.07) 0%, transparent 70%),
+      radial-gradient(ellipse 40% 40% at 20% 20%, rgba(122,158,142,0.04) 0%, transparent 60%);
+    pointer-events: none;
+  }
+
+  .left-panel::after {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    background-image:
+      linear-gradient(rgba(212,168,83,0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(212,168,83,0.025) 1px, transparent 1px);
+    background-size: 50px 50px; pointer-events: none;
+  }
+
+  .left-top { position: relative; z-index: 1; }
+  .left-logo { display: flex; align-items: center; gap: 12px; text-decoration: none; margin-bottom: 72px; }
+  .left-logo-shield {
+    width: 36px; height: 36px;
+    background: rgba(212,168,83,0.1); border: 1px solid rgba(212,168,83,0.25);
+    border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px;
+  }
+  .left-logo-text {
+    font-family: 'Cormorant Garamond', serif; font-size: 20px;
+    font-weight: 300; letter-spacing: 0.12em; color: var(--gold-300);
+  }
+
+  .left-headline {
+    font-size: clamp(2rem, 3vw, 2.8rem); font-weight: 300;
+    line-height: 1.15; color: var(--slate-200); margin-bottom: 20px;
+  }
+  .left-headline em { font-style: italic; color: var(--gold-300); }
+  .left-sub { font-size: 1rem; font-weight: 300; color: var(--slate-400); line-height: 1.7; max-width: 380px; }
+
+  .left-bottom { position: relative; z-index: 1; }
+
+  /* Mini portal preview */
+  .mini-portal {
+    background: var(--slate-800);
+    border: 1px solid rgba(212,168,83,0.12);
+    border-radius: 8px; overflow: hidden;
+    box-shadow: 0 16px 48px rgba(0,0,0,0.4);
+  }
+  .mini-portal-header {
+    padding: 12px 16px;
+    background: rgba(212,168,83,0.04);
+    border-bottom: 1px solid rgba(212,168,83,0.08);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .mini-portal-title { font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--gold-400); }
+  .mini-status { display: flex; align-items: center; gap: 5px; font-family: 'DM Mono', monospace; font-size: 8px; color: var(--sage-light); }
+  .mini-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--sage-light); box-shadow: 0 0 5px var(--sage-light); animation: pulse 2s ease-in-out infinite; }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+  .mini-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 9px 16px; border-bottom: 1px solid rgba(255,255,255,0.03); font-size: 12px;
+  }
+  .mini-row:last-child { border-bottom: none; }
+  .mini-label { color: var(--slate-400); display: flex; align-items: center; gap: 7px; }
+  .mini-rdot { width: 5px; height: 5px; border-radius: 50%; }
+  .c-green { background: #4caf86; box-shadow: 0 0 5px #4caf86; }
+  .c-gold { background: var(--gold-400); box-shadow: 0 0 5px var(--gold-400); }
+  .c-sage { background: var(--sage-light); }
+  .mini-val { font-family: 'DM Mono', monospace; font-size: 10px; }
+  .mini-val.ok { color: var(--sage-light); }
+  .mini-val.g { color: var(--gold-300); }
+
+  .left-tagline {
+    margin-top: 20px;
+    font-family: 'DM Mono', monospace; font-size: 9px;
+    letter-spacing: 0.15em; text-transform: uppercase; color: var(--slate-600);
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  /* ── RIGHT PANEL (FORM) ── */
+  .right-panel {
+    display: flex; align-items: center; justify-content: center;
+    padding: 48px 60px;
+    background: var(--slate-950);
+  }
+
+  .auth-box { width: 100%; max-width: 420px; }
+
+  /* Tab switcher */
+  .auth-tabs {
+    display: flex; gap: 0;
+    border: 1px solid rgba(212,168,83,0.12);
+    border-radius: 4px; overflow: hidden;
+    margin-bottom: 36px;
+  }
+  .auth-tab {
+    flex: 1; padding: 11px 16px;
+    background: transparent;
+    border: none; cursor: pointer;
+    font-family: 'DM Mono', monospace; font-size: 10px;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--slate-400); transition: all 0.2s;
+  }
+  .auth-tab.active {
+    background: rgba(212,168,83,0.1);
+    color: var(--gold-300);
+    border-bottom: 2px solid var(--gold-400);
+  }
+  .auth-tab:not(.active):hover { background: rgba(255,255,255,0.03); color: var(--slate-300); }
+
+  /* Panel content */
+  .auth-panel { display: none; }
+  .auth-panel.active { display: block; }
+
+  .auth-heading {
+    font-size: 2rem; font-weight: 300; color: var(--slate-200);
+    line-height: 1.2; margin-bottom: 6px;
+  }
+  .auth-heading em { font-style: italic; color: var(--gold-300); }
+  .auth-subhead {
+    font-size: 0.9rem; font-weight: 300; color: var(--slate-400);
+    margin-bottom: 32px; line-height: 1.6;
+  }
+
+  /* Form fields */
+  .field-group { margin-bottom: 18px; }
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 18px; }
+  label {
+    display: block;
+    font-family: 'DM Mono', monospace; font-size: 9px;
+    letter-spacing: 0.15em; text-transform: uppercase;
+    color: var(--slate-400); margin-bottom: 7px;
+  }
+  input[type=text],
+  input[type=email],
+  input[type=password],
+  select {
+    width: 100%; padding: 12px 14px;
+    background: var(--slate-900);
+    border: 1px solid rgba(212,168,83,0.12);
+    border-radius: 3px;
+    color: var(--slate-200);
+    font-family: 'DM Mono', monospace; font-size: 12px; letter-spacing: 0.04em;
+    outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+    -webkit-appearance: none;
+  }
+  input:focus, select:focus {
+    border-color: rgba(212,168,83,0.4);
+    box-shadow: 0 0 0 3px rgba(212,168,83,0.07);
+  }
+  input::placeholder { color: var(--slate-600); }
+  select option { background: var(--slate-900); }
+
+  /* Password strength bar */
+  .pwd-strength { margin-top: 8px; }
+  .pwd-bar-track { height: 2px; background: rgba(255,255,255,0.06); border-radius: 2px; overflow: hidden; margin-bottom: 4px; }
+  .pwd-bar-fill { height: 100%; border-radius: 2px; transition: width 0.3s, background 0.3s; width: 0%; }
+  .pwd-label { font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 0.08em; color: var(--slate-600); }
+
+  /* Terms checkbox */
+  .terms-row {
+    display: flex; align-items: flex-start; gap: 10px;
+    margin-bottom: 24px;
+  }
+  .terms-row input[type=checkbox] {
+    width: 16px; height: 16px; min-width: 16px; padding: 0;
+    accent-color: var(--gold-400);
+    margin-top: 2px; cursor: pointer;
+  }
+  .terms-text {
+    font-size: 0.8rem; font-weight: 300; color: var(--slate-400); line-height: 1.5;
+  }
+  .terms-text a { color: var(--gold-400); text-decoration: none; }
+  .terms-text a:hover { text-decoration: underline; }
+
+  /* Submit button */
+  .submit-btn {
+    width: 100%; padding: 14px;
+    background: var(--gold-500); color: var(--slate-950);
+    border: 1px solid var(--gold-400); border-radius: 3px;
+    font-family: 'DM Mono', monospace; font-size: 11px;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    cursor: pointer; transition: all 0.2s; font-weight: 400;
+    margin-bottom: 20px;
+  }
+  .submit-btn:hover { background: var(--gold-400); }
+  .submit-btn:active { transform: scale(0.99); }
+
+  .divider {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 20px;
+  }
+  .divider-line { flex: 1; height: 1px; background: rgba(255,255,255,0.06); }
+  .divider-text { font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: var(--slate-600); text-transform: uppercase; }
+
+  /* SSO / alt login */
+  .alt-btn {
+    width: 100%; padding: 12px;
+    background: transparent; border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 3px; color: var(--slate-400);
+    font-family: 'DM Mono', monospace; font-size: 10px;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    cursor: pointer; transition: all 0.2s;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .alt-btn:hover { border-color: rgba(212,168,83,0.2); color: var(--slate-300); }
+
+  /* Switch link */
+  .switch-line {
+    text-align: center; margin-top: 24px;
+    font-size: 0.85rem; font-weight: 300; color: var(--slate-400);
+  }
+  .switch-line button {
+    background: none; border: none; cursor: pointer;
+    color: var(--gold-400); font-family: 'Cormorant Garamond', serif;
+    font-size: 0.95rem; font-weight: 400; text-decoration: underline; text-underline-offset: 3px;
+    transition: color 0.2s;
+  }
+  .switch-line button:hover { color: var(--gold-300); }
+
+  /* Toast / success */
+  .auth-success {
+    display: none;
+    background: rgba(45,106,79,0.12);
+    border: 1px solid rgba(163,196,181,0.25);
+    border-radius: 4px; padding: 14px 16px;
+    margin-bottom: 20px;
+    font-size: 0.875rem; color: var(--sage-light); line-height: 1.5;
+    align-items: center; gap: 10px;
+  }
+  .auth-success.show { display: flex; }
+  .auth-error {
+    display: none;
+    background: rgba(192,57,43,0.1);
+    border: 1px solid rgba(229,115,115,0.25);
+    border-radius: 4px; padding: 12px 16px;
+    margin-bottom: 20px;
+    font-size: 0.875rem; color: var(--danger); line-height: 1.5;
+    align-items: center; gap: 10px;
+  }
+  .auth-error.show { display: flex; }
+
+  /* forgot */
+  .forgot-link {
+    display: block; text-align: right; margin-top: -10px; margin-bottom: 18px;
+    font-family: 'DM Mono', monospace; font-size: 9px;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--slate-600); text-decoration: none; transition: color 0.2s;
+  }
+  .forgot-link:hover { color: var(--gold-400); }
+
+  /* Back to site */
+  .back-link {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: 'DM Mono', monospace; font-size: 9px;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--slate-600); text-decoration: none; margin-bottom: 32px;
+    transition: color 0.2s;
+  }
+  .back-link:hover { color: var(--gold-400); }
+  .back-arrow { font-size: 11px; }
+
+  /* account type pills */
+  .type-pills { display: flex; gap: 8px; margin-bottom: 18px; }
+  .type-pill {
+    flex: 1; padding: 10px 8px; text-align: center;
+    background: var(--slate-900); border: 1px solid rgba(212,168,83,0.1);
+    border-radius: 3px; cursor: pointer;
+    font-family: 'DM Mono', monospace; font-size: 9px;
+    letter-spacing: 0.1em; text-transform: uppercase; color: var(--slate-400);
+    transition: all 0.2s;
+  }
+  .type-pill:hover { border-color: rgba(212,168,83,0.22); color: var(--slate-300); }
+  .type-pill.selected { background: rgba(212,168,83,0.1); border-color: rgba(212,168,83,0.35); color: var(--gold-300); }
+  .pill-icon { font-size: 16px; display: block; margin-bottom: 4px; }
+
+  @media (max-width: 800px) {
+    body { grid-template-columns: 1fr; }
+    .left-panel { display: none; }
+    .right-panel { padding: 48px 24px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- LEFT PANEL -->
+<div class="left-panel">
+  <div class="left-top">
+    <a href="afterguard.html" class="left-logo">
+      <div class="left-logo-shield">🛡</div>
+      <span class="left-logo-text">AfterGuard</span>
+    </a>
+    <div class="left-headline">Your secure<br>estate <em>portal</em><br>awaits</div>
+    <p class="left-sub">Sign in to access your family's encrypted estate portal — or create an account to get started protecting what matters most.</p>
+  </div>
+
+  <div class="left-bottom">
+    <div class="mini-portal">
+      <div class="mini-portal-header">
+        <span class="mini-portal-title">Estate Portal · AG-2024-0871</span>
+        <span class="mini-status"><span class="mini-dot"></span> Secure</span>
+      </div>
+      <div class="mini-row"><span class="mini-label"><span class="mini-rdot c-green"></span>Funeral Home Connected</span><span class="mini-val ok">✓ Verified</span></div>
+      <div class="mini-row"><span class="mini-label"><span class="mini-rdot c-gold"></span>Documents Stored</span><span class="mini-val g">14 files</span></div>
+      <div class="mini-row"><span class="mini-label"><span class="mini-rdot c-sage"></span>Family Access</span><span class="mini-val">3 members</span></div>
+      <div class="mini-row"><span class="mini-label"><span class="mini-rdot c-green"></span>Encryption</span><span class="mini-val ok">AES-256 Active</span></div>
+    </div>
+    <div class="left-tagline">🔒 &nbsp;All data encrypted at rest &amp; in transit</div>
+  </div>
+</div>
+
+<!-- RIGHT PANEL -->
+<div class="right-panel">
+  <div class="auth-box">
+
+    <a href="afterguard.html" class="back-link"><span class="back-arrow">←</span> Back to site</a>
+
+    <!-- TABS -->
+    <div class="auth-tabs">
+      <button class="auth-tab active" onclick="switchTab('signin')">Sign In</button>
+      <button class="auth-tab" onclick="switchTab('create')">Create Account</button>
+    </div>
+
+    <!-- ── SIGN IN PANEL ── -->
+    <div class="auth-panel active" id="panel-signin">
+      <div class="auth-heading">Welcome <em>back</em></div>
+      <p class="auth-subhead">Sign in to your AfterGuard estate portal.</p>
+
+      <div class="auth-error" id="signin-error">
+        <span>⚠</span> Incorrect email or password. Please try again.
+      </div>
+      <div class="auth-success" id="signin-success">
+        <span>✓</span> Signed in successfully. Redirecting to your portal…
+      </div>
+
+      <div class="field-group">
+        <label for="signin-email">Email Address</label>
+        <input type="email" id="signin-email" placeholder="you@example.com" autocomplete="email">
+      </div>
+
+      <div class="field-group">
+        <label for="signin-password">Password</label>
+        <input type="password" id="signin-password" placeholder="••••••••••••" autocomplete="current-password">
+      </div>
+      <a href="#" class="forgot-link" onclick="showForgot(event)">Forgot password?</a>
+
+      <button class="submit-btn" onclick="handleSignIn()">Sign In to Portal</button>
+
+      <div class="divider">
+        <div class="divider-line"></div>
+        <span class="divider-text">or</span>
+        <div class="divider-line"></div>
+      </div>
+
+      <button class="alt-btn" onclick="showToast('SSO login coming soon.')">
+        <span>🏢</span> Sign in with SSO / SAML
+      </button>
+
+      <div class="switch-line">
+        Don't have an account? <button onclick="switchTab('create')">Create one</button>
+      </div>
+    </div>
+
+    <!-- ── CREATE ACCOUNT PANEL ── -->
+    <div class="auth-panel" id="panel-create">
+      <div class="auth-heading">Create your <em>account</em></div>
+      <p class="auth-subhead">Set up secure access to your AfterGuard estate portal.</p>
+
+      <div class="auth-error" id="create-error">
+        <span>⚠</span> <span id="create-error-msg">Please fill in all required fields.</span>
+      </div>
+      <div class="auth-success" id="create-success">
+        <span>✓</span> Account created! Check your email to verify, then sign in.
+      </div>
+
+      <!-- Account type -->
+      <div style="margin-bottom: 18px;">
+        <label style="margin-bottom: 10px; display: block;">I am a</label>
+        <div class="type-pills">
+          <div class="type-pill selected" onclick="selectType(this)" data-type="family">
+            <span class="pill-icon">👨‍👩‍👧</span>Family Member
+          </div>
+          <div class="type-pill" onclick="selectType(this)" data-type="funeral">
+            <span class="pill-icon">🏛️</span>Funeral Home
+          </div>
+          <div class="type-pill" onclick="selectType(this)" data-type="legal">
+            <span class="pill-icon">⚖️</span>Attorney / Legal
+          </div>
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field-group" style="margin-bottom:0">
+          <label for="create-first">First Name</label>
+          <input type="text" id="create-first" placeholder="Margaret">
+        </div>
+        <div class="field-group" style="margin-bottom:0">
+          <label for="create-last">Last Name</label>
+          <input type="text" id="create-last" placeholder="Whitmore">
+        </div>
+      </div>
+
+      <div class="field-group">
+        <label for="create-email">Email Address</label>
+        <input type="email" id="create-email" placeholder="you@example.com" autocomplete="email">
+      </div>
+
+      <div class="field-group">
+        <label for="create-username">Username</label>
+        <input type="text" id="create-username" placeholder="mwhitmore" autocomplete="username">
+      </div>
+
+      <div class="field-group">
+        <label for="create-password">Password</label>
+        <input type="password" id="create-password" placeholder="Create a strong password" oninput="checkStrength(this.value)" autocomplete="new-password">
+        <div class="pwd-strength">
+          <div class="pwd-bar-track"><div class="pwd-bar-fill" id="pwd-fill"></div></div>
+          <span class="pwd-label" id="pwd-label">Enter a password</span>
+        </div>
+      </div>
+
+      <div class="field-group">
+        <label for="create-confirm">Confirm Password</label>
+        <input type="password" id="create-confirm" placeholder="Repeat your password" autocomplete="new-password">
+      </div>
+
+      <div class="terms-row">
+        <input type="checkbox" id="terms-check">
+        <span class="terms-text">I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>. I understand AfterGuard handles sensitive estate data and consent to secure storage.</span>
+      </div>
+
+      <button class="submit-btn" onclick="handleCreateAccount()">Create Secure Account</button>
+
+      <div class="switch-line">
+        Already have an account? <button onclick="switchTab('signin')">Sign in</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast" style="
+  position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%) translateY(20px);
+  background: var(--slate-800); border: 1px solid rgba(212,168,83,0.2);
+  color: var(--slate-300); padding: 12px 20px; border-radius: 4px;
+  font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.06em;
+  opacity: 0; transition: opacity 0.3s, transform 0.3s; pointer-events: none; z-index: 999;
+  white-space: nowrap;
+"></div>
+
+<script>
+  // Tab switching
+  function switchTab(tab) {
+    document.querySelectorAll('.auth-tab').forEach((t, i) => {
+      t.classList.toggle('active', (tab === 'signin' && i === 0) || (tab === 'create' && i === 1));
+    });
+    document.getElementById('panel-signin').classList.toggle('active', tab === 'signin');
+    document.getElementById('panel-create').classList.toggle('active', tab === 'create');
+    // hide alerts when switching
+    ['signin-error','signin-success','create-error','create-success'].forEach(id => {
+      document.getElementById(id).classList.remove('show');
+    });
+  }
+
+  // Account type pills
+  function selectType(el) {
+    document.querySelectorAll('.type-pill').forEach(p => p.classList.remove('selected'));
+    el.classList.add('selected');
+  }
+
+  // Password strength
+  function checkStrength(val) {
+    const fill = document.getElementById('pwd-fill');
+    const label = document.getElementById('pwd-label');
+    let score = 0;
+    if (val.length >= 8) score++;
+    if (val.length >= 12) score++;
+    if (/[A-Z]/.test(val)) score++;
+    if (/[0-9]/.test(val)) score++;
+    if (/[^A-Za-z0-9]/.test(val)) score++;
+
+    const levels = [
+      { pct: '0%',   color: 'transparent', text: 'Enter a password' },
+      { pct: '20%',  color: '#e57373',      text: 'Very weak' },
+      { pct: '40%',  color: '#ff9800',      text: 'Weak' },
+      { pct: '60%',  color: '#fbbf24',      text: 'Fair' },
+      { pct: '80%',  color: '#a3c4b5',      text: 'Strong' },
+      { pct: '100%', color: '#4caf86',      text: 'Very strong ✓' },
+    ];
+    const lvl = val.length === 0 ? levels[0] : levels[Math.min(score, 5)];
+    fill.style.width = lvl.pct;
+    fill.style.background = lvl.color;
+    label.textContent = lvl.text;
+    label.style.color = lvl.color === 'transparent' ? 'var(--slate-600)' : lvl.color;
+  }
+
+  // Sign in handler
+  function handleSignIn() {
+    const email = document.getElementById('signin-email').value.trim();
+    const password = document.getElementById('signin-password').value;
+    const errEl = document.getElementById('signin-error');
+    const successEl = document.getElementById('signin-success');
+
+    errEl.classList.remove('show');
+    successEl.classList.remove('show');
+
+    if (!email || !password) {
+      errEl.querySelector('span:last-child').textContent = ' Please enter your email and password.';
+      errEl.innerHTML = '<span>⚠</span> Please enter your email and password.';
+      errEl.classList.add('show');
+      return;
+    }
+
+    // Simulate auth — in production this would be a real API call
+    successEl.classList.add('show');
+    showToast('Signing you in…');
+    // Would redirect to dashboard: setTimeout(() => window.location = 'dashboard.html', 1500);
+  }
+
+  // Create account handler
+  function handleCreateAccount() {
+    const first = document.getElementById('create-first').value.trim();
+    const last  = document.getElementById('create-last').value.trim();
+    const email = document.getElementById('create-email').value.trim();
+    const uname = document.getElementById('create-username').value.trim();
+    const pwd   = document.getElementById('create-password').value;
+    const conf  = document.getElementById('create-confirm').value;
+    const terms = document.getElementById('terms-check').checked;
+
+    const errEl     = document.getElementById('create-error');
+    const errMsg    = document.getElementById('create-error-msg');
+    const successEl = document.getElementById('create-success');
+
+    errEl.classList.remove('show');
+    successEl.classList.remove('show');
+
+    if (!first || !last || !email || !uname || !pwd || !conf) {
+      errMsg.textContent = 'Please fill in all required fields.';
+      errEl.classList.add('show'); return;
+    }
+    if (pwd !== conf) {
+      errMsg.textContent = 'Passwords do not match. Please try again.';
+      errEl.classList.add('show'); return;
+    }
+    if (pwd.length < 8) {
+      errMsg.textContent = 'Password must be at least 8 characters.';
+      errEl.classList.add('show'); return;
+    }
+    if (!terms) {
+      errMsg.textContent = 'Please agree to the Terms of Service to continue.';
+      errEl.classList.add('show'); return;
+    }
+
+    successEl.classList.add('show');
+    showToast('Account created — check your email to verify.');
+  }
+
+  // Toast
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.style.opacity = '1';
+    t.style.transform = 'translateX(-50%) translateY(0)';
+    setTimeout(() => {
+      t.style.opacity = '0';
+      t.style.transform = 'translateX(-50%) translateY(20px)';
+    }, 3000);
+  }
+
+  // Forgot password
+  function showForgot(e) {
+    e.preventDefault();
+    showToast('Password reset — check your email for instructions.');
+  }
+</script>
+</body>
+</html>
