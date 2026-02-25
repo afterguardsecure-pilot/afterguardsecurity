@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AfterGuard — Digital Vigil · John Smith</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Mono:wght@300;400&family=Great+Vibes&display=swap" rel="stylesheet">
+<style>
+:root {
+  --slate-950:#0a0c0f; --slate-900:#0f1318; --slate-800:#171d26;
+  --slate-700:#1f2937; --slate-600:#374151; --slate-400:#9ca3af;
+  --slate-300:#d1d5db; --slate-200:#e5e7eb;
+  --gold-400:#d4a853; --gold-300:#e2bb72; --gold-200:#f0d4a0; --gold-500:#b8922e;
+  --sage:#7a9e8e; --sage-light:#a3c4b5;
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{background:var(--slate-950);color:var(--slate-300);font-family:'Cormorant Garamond',Georgia,serif;overflow-x:hidden;min-height:100vh;}
+
+/* VAULT LOCK SCREEN */
+#vault-screen{
+  position:fixed;inset:0;z-index:9999;
+  background:var(--slate-950);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  background-image:
+    linear-gradient(rgba(212,168,83,0.025) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(212,168,83,0.025) 1px,transparent 1px);
+  background-size:60px 60px;
+}
+#vault-screen::before{
+  content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:600px;height:500px;
+  background:radial-gradient(ellipse,rgba(212,168,83,0.08) 0%,transparent 70%);
+  pointer-events:none;
+}
+.vault-logo{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:300;letter-spacing:0.14em;color:var(--gold-300);margin-bottom:48px;display:flex;align-items:center;gap:10px;}
+.vault-shield{width:36px;height:36px;background:rgba(212,168,83,0.1);border:1px solid rgba(212,168,83,0.25);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:16px;}
+.vault-lock-icon{font-size:52px;margin-bottom:24px;animation:float 3s ease-in-out infinite;}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.vault-title{font-size:2rem;font-weight:300;color:var(--slate-200);margin-bottom:8px;text-align:center;}
+.vault-title em{font-style:italic;color:var(--gold-300);}
+.vault-sub{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:var(--slate-600);margin-bottom:36px;}
+.vault-input-wrap{position:relative;width:300px;margin-bottom:16px;}
+.vault-input{
+  width:100%;padding:14px 18px;
+  background:var(--slate-800);border:1px solid rgba(212,168,83,0.2);
+  border-radius:4px;color:var(--slate-200);
+  font-family:'DM Mono',monospace;font-size:13px;letter-spacing:0.2em;
+  outline:none;transition:border-color 0.2s;text-align:center;
+}
+.vault-input:focus{border-color:rgba(212,168,83,0.5);box-shadow:0 0 0 3px rgba(212,168,83,0.07);}
+.vault-btn{
+  width:300px;padding:13px;
+  background:var(--gold-500);border:1px solid var(--gold-400);border-radius:4px;
+  color:var(--slate-950);font-family:'DM Mono',monospace;font-size:11px;
+  letter-spacing:0.12em;text-transform:uppercase;cursor:pointer;transition:all 0.2s;
+}
+.vault-btn:hover{background:var(--gold-400);}
+.vault-error{
+  font-family:'DM Mono',monospace;font-size:10px;color:#e57373;
+  letter-spacing:0.08em;margin-top:10px;opacity:0;transition:opacity 0.3s;
+  text-align:center;
+}
+.vault-error.show{opacity:1;}
+.vault-hint{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.1em;color:var(--slate-700);margin-top:20px;text-align:center;}
+
+/* MAIN MEMORIAL — hidden until unlocked */
+#memorial-main{display:none;}
+
+/* BACKGROUND */
+#memorial-main{
+  background:var(--slate-950);
+  background-image:
+    radial-gradient(ellipse 80% 40% at 50% 0%,rgba(212,168,83,0.05) 0%,transparent 60%),
+    linear-gradient(rgba(212,168,83,0.02) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(212,168,83,0.02) 1px,transparent 1px);
+  background-size:auto,70px 70px,70px 70px;
+}
+
+/* NAV */
+.mem-nav{
+  position:sticky;top:0;z-index:100;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 48px;height:60px;
+  background:rgba(10,12,15,0.94);backdrop-filter:blur(16px);
+  border-bottom:1px solid rgba(212,168,83,0.1);
+}
+.mem-logo{display:flex;align-items:center;gap:10px;text-decoration:none;}
+.mem-logo-text{font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:300;letter-spacing:0.12em;color:var(--gold-300);}
+.mem-nav-right{display:flex;align-items:center;gap:12px;}
+.mem-tag{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.16em;text-transform:uppercase;color:var(--slate-600);border:1px solid rgba(212,168,83,0.12);padding:4px 10px;border-radius:20px;}
+.mem-lock-btn{
+  font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;
+  color:var(--slate-400);background:transparent;border:1px solid rgba(255,255,255,0.08);
+  padding:6px 14px;border-radius:3px;cursor:pointer;transition:all 0.2s;
+}
+.mem-lock-btn:hover{border-color:rgba(212,168,83,0.3);color:var(--gold-300);}
+
+/* HERO / GRAVESTONE */
+.mem-hero{
+  display:flex;flex-direction:column;align-items:center;
+  padding:60px 40px 40px;text-align:center;position:relative;
+}
+.gravestone-wrap{
+  position:relative;width:220px;height:260px;margin-bottom:32px;
+  filter:drop-shadow(0 20px 60px rgba(0,0,0,0.7));
+}
+.gravestone-img{
+  width:220px;height:260px;object-fit:contain;
+  mix-blend-mode:lighten;
+  filter:brightness(0.75) sepia(0.3) saturate(0.6);
+  transition:filter 0.3s;
+}
+.gravestone-wrap:hover .gravestone-img{filter:brightness(0.9) sepia(0.2) saturate(0.7);}
+.gravestone-text{
+  position:absolute;bottom:58px;left:50%;transform:translateX(-50%);
+  text-align:center;width:160px;
+}
+.gravestone-name{
+  font-family:'Cormorant Garamond',serif;font-size:16px;font-weight:400;
+  color:rgba(212,168,83,0.85);letter-spacing:0.06em;margin-bottom:4px;
+  text-shadow:0 0 12px rgba(212,168,83,0.3);
+}
+.gravestone-dates{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.12em;color:rgba(163,196,181,0.6);}
+.mem-hero-title{font-size:clamp(2rem,4vw,3.2rem);font-weight:300;color:var(--slate-200);margin-bottom:8px;line-height:1.15;}
+.mem-hero-title em{font-style:italic;color:var(--gold-300);}
+.mem-hero-sub{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:var(--slate-600);margin-bottom:32px;}
+.mem-stats{display:flex;gap:40px;justify-content:center;flex-wrap:wrap;}
+.mem-stat{text-align:center;}
+.mem-stat-val{font-family:'Cormorant Garamond',serif;font-size:2rem;font-weight:300;color:var(--gold-300);}
+.mem-stat-lbl{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:var(--slate-600);margin-top:2px;}
+
+/* SECTION WRAPPER */
+.mem-content{max-width:1100px;margin:0 auto;padding:0 40px 80px;}
+
+/* PANEL */
+.mem-panel{background:var(--slate-900);border:1px solid rgba(212,168,83,0.1);border-radius:8px;margin-bottom:24px;overflow:hidden;}
+.mem-panel-hdr{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:18px 24px;border-bottom:1px solid rgba(212,168,83,0.07);
+  background:rgba(212,168,83,0.025);
+}
+.mem-panel-title{font-size:17px;font-weight:400;color:var(--slate-200);}
+.mem-panel-eyebrow{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:var(--gold-400);margin-bottom:3px;}
+.mem-panel-body{padding:24px;}
+
+/* CANDLE ARENA */
+.candle-section{padding:32px 24px;}
+.candle-arena{
+  position:relative;min-height:280px;
+  background:var(--slate-950);border:1px solid rgba(212,168,83,0.08);
+  border-radius:6px;overflow:hidden;
+  background-image:radial-gradient(ellipse 60% 40% at 50% 100%,rgba(212,168,83,0.04) 0%,transparent 70%);
+}
+.candle-arena-label{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.15em;text-transform:uppercase;
+  color:var(--slate-700);text-align:center;pointer-events:none;
+  transition:opacity 0.4s;
+}
+.candle-arena-label span{display:block;font-size:22px;margin-bottom:8px;opacity:0.3;}
+.candle{
+  position:absolute;cursor:grab;user-select:none;
+  width:80px;height:80px;
+  display:flex;align-items:center;justify-content:center;
+  filter:drop-shadow(0 0 12px rgba(212,168,83,0.5));
+  transition:filter 0.2s;
+  z-index:10;
+}
+.candle:active{cursor:grabbing;}
+.candle:hover{filter:drop-shadow(0 0 20px rgba(212,168,83,0.8));}
+.candle img{
+  width:72px;height:72px;object-fit:contain;
+  mix-blend-mode:lighten;
+  pointer-events:none;
+}
+.candle-count{
+  font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.12em;
+  color:var(--gold-400);margin-bottom:14px;
+}
+.light-btn{
+  background:rgba(212,168,83,0.1);border:1px solid rgba(212,168,83,0.3);
+  color:var(--gold-300);padding:10px 22px;border-radius:3px;
+  font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;
+  cursor:pointer;transition:all 0.2s;display:inline-flex;align-items:center;gap:8px;
+}
+.light-btn:hover{background:rgba(212,168,83,0.18);border-color:var(--gold-300);}
+.candle-controls{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:16px;}
+
+/* MEMORIES TIMELINE */
+.timeline{display:flex;flex-direction:column;gap:0;}
+.timeline-entry{
+  display:flex;gap:20px;padding:20px 0;
+  border-bottom:1px solid rgba(255,255,255,0.04);
+  animation:fadeSlideIn 0.5s ease both;
+}
+.timeline-entry:last-child{border-bottom:none;}
+@keyframes fadeSlideIn{from{opacity:0;transform:translateX(-16px)}to{opacity:1;transform:translateX(0)}}
+.timeline-dot-col{display:flex;flex-direction:column;align-items:center;gap:0;padding-top:4px;}
+.t-dot{width:10px;height:10px;border-radius:50%;background:var(--gold-400);box-shadow:0 0 8px rgba(212,168,83,0.5);flex-shrink:0;}
+.t-line{width:1px;flex:1;min-height:24px;background:linear-gradient(to bottom,rgba(212,168,83,0.2),transparent);margin-top:6px;}
+.timeline-body{flex:1;}
+.t-meta{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--slate-600);margin-bottom:6px;display:flex;align-items:center;gap:10px;}
+.t-author{color:var(--gold-500);}
+.t-text{font-size:1rem;font-weight:300;color:var(--slate-300);line-height:1.7;margin-bottom:10px;}
+.t-photo{width:100%;max-width:380px;border-radius:4px;border:1px solid rgba(212,168,83,0.12);margin-top:8px;object-fit:cover;}
+.t-delete{background:none;border:none;color:var(--slate-700);cursor:pointer;font-size:11px;font-family:'DM Mono',monospace;transition:color 0.2s;padding:2px;}
+.t-delete:hover{color:#e57373;}
+
+/* ADD MEMORY FORM */
+.add-memory-form{border:1px dashed rgba(212,168,83,0.2);border-radius:6px;padding:22px;background:rgba(212,168,83,0.02);}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;}
+.field-lbl{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:var(--slate-400);margin-bottom:6px;display:block;}
+.field-in{
+  width:100%;padding:9px 13px;
+  background:var(--slate-800);border:1px solid rgba(212,168,83,0.12);
+  border-radius:3px;color:var(--slate-200);font-family:'DM Mono',monospace;font-size:12px;
+  outline:none;transition:border-color 0.2s;
+}
+.field-in:focus{border-color:rgba(212,168,83,0.35);}
+.field-ta{width:100%;padding:10px 13px;background:var(--slate-800);border:1px solid rgba(212,168,83,0.12);border-radius:3px;color:var(--slate-200);font-family:'Cormorant Garamond',serif;font-size:15px;outline:none;transition:border-color 0.2s;resize:vertical;min-height:90px;line-height:1.6;}
+.field-ta:focus{border-color:rgba(212,168,83,0.35);}
+.photo-drop{
+  border:1px dashed rgba(212,168,83,0.2);border-radius:4px;
+  padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;
+  background:rgba(212,168,83,0.01);margin-bottom:12px;
+}
+.photo-drop:hover,.photo-drop.over{border-color:rgba(212,168,83,0.4);background:rgba(212,168,83,0.04);}
+.photo-drop-lbl{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--slate-600);}
+.photo-preview{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;}
+.photo-preview img{width:64px;height:64px;object-fit:cover;border-radius:3px;border:1px solid rgba(212,168,83,0.15);}
+.submit-mem-btn{
+  background:var(--gold-500);border:1px solid var(--gold-400);color:var(--slate-950);
+  padding:10px 24px;border-radius:3px;font-family:'DM Mono',monospace;
+  font-size:11px;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;transition:all 0.2s;
+}
+.submit-mem-btn:hover{background:var(--gold-400);}
+
+/* QUOTES WALL */
+.quotes-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;}
+.quote-card{
+  background:var(--slate-950);border:1px solid rgba(212,168,83,0.1);
+  border-radius:6px;padding:24px 20px;position:relative;
+  transition:border-color 0.2s,transform 0.2s;
+  animation:fadeSlideIn 0.5s ease both;
+}
+.quote-card:hover{border-color:rgba(212,168,83,0.22);transform:translateY(-2px);}
+.quote-mark{font-size:3rem;color:rgba(212,168,83,0.12);font-family:Georgia,serif;line-height:1;margin-bottom:4px;}
+.quote-text{font-family:'Great Vibes',cursive;font-size:1.6rem;color:var(--gold-200);line-height:1.45;margin-bottom:12px;}
+.quote-author{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--slate-600);}
+.quote-delete{position:absolute;top:10px;right:12px;background:none;border:none;color:var(--slate-700);cursor:pointer;font-size:12px;transition:color 0.2s;}
+.quote-delete:hover{color:#e57373;}
+.add-quote-form{display:flex;flex-direction:column;gap:10px;background:rgba(212,168,83,0.02);border:1px dashed rgba(212,168,83,0.2);border-radius:6px;padding:20px;margin-top:16px;}
+.add-quote-ta{
+  width:100%;padding:12px 14px;background:var(--slate-800);
+  border:1px solid rgba(212,168,83,0.15);border-radius:3px;
+  color:var(--gold-200);font-family:'Great Vibes',cursive;font-size:1.5rem;
+  outline:none;resize:none;min-height:80px;line-height:1.5;transition:border-color 0.2s;
+}
+.add-quote-ta:focus{border-color:rgba(212,168,83,0.4);}
+.add-quote-ta::placeholder{color:rgba(212,168,83,0.25);}
+.quote-author-in{
+  width:100%;padding:9px 13px;background:var(--slate-800);
+  border:1px solid rgba(212,168,83,0.12);border-radius:3px;
+  color:var(--slate-400);font-family:'DM Mono',monospace;font-size:11px;
+  outline:none;transition:border-color 0.2s;
+}
+.quote-author-in:focus{border-color:rgba(212,168,83,0.35);}
+.add-quote-btn{
+  align-self:flex-start;background:rgba(212,168,83,0.1);border:1px solid rgba(212,168,83,0.3);
+  color:var(--gold-300);padding:9px 20px;border-radius:3px;
+  font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;
+  cursor:pointer;transition:all 0.2s;
+}
+.add-quote-btn:hover{background:rgba(212,168,83,0.18);}
+
+/* LAST WORDS VAULT */
+.last-words-panel{
+  background:linear-gradient(135deg,rgba(212,168,83,0.04),rgba(122,158,142,0.03));
+  border:1px solid rgba(212,168,83,0.15);
+  border-radius:8px;padding:32px;text-align:center;
+}
+.lw-icon{font-size:36px;margin-bottom:16px;}
+.lw-title{font-size:1.5rem;font-weight:300;color:var(--slate-200);margin-bottom:8px;}
+.lw-sub{font-size:0.9rem;font-weight:300;color:var(--slate-400);max-width:420px;margin:0 auto 24px;line-height:1.7;}
+.lw-btn{
+  background:rgba(212,168,83,0.1);border:1px solid rgba(212,168,83,0.28);
+  color:var(--gold-300);padding:12px 28px;border-radius:3px;
+  font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;
+  cursor:pointer;transition:all 0.2s;
+}
+.lw-btn:hover{background:rgba(212,168,83,0.18);}
+
+/* SECTION DIVIDER */
+.mem-divider{display:flex;align-items:center;gap:16px;margin:8px 0 24px;}
+.mem-divider-line{flex:1;height:1px;background:linear-gradient(90deg,transparent,rgba(212,168,83,0.15),transparent);}
+.mem-divider-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:var(--gold-500);}
+
+/* TOAST */
+.toast{
+  position:fixed;bottom:32px;left:50%;transform:translateX(-50%) translateY(20px);
+  background:var(--slate-800);border:1px solid rgba(212,168,83,0.2);
+  color:var(--slate-300);padding:12px 20px;border-radius:4px;
+  font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.06em;
+  opacity:0;transition:opacity 0.3s,transform 0.3s;pointer-events:none;z-index:9998;white-space:nowrap;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+</style>
+</head>
+<body>
+
+<!-- ══ VAULT LOCK SCREEN ════════════════════════════════════════════════ -->
+<div id="vault-screen">
+  <div class="vault-logo">
+    <div class="vault-shield">🛡</div>
+    AfterGuard
+  </div>
+  <div class="vault-lock-icon">🔒</div>
+  <h1 class="vault-title">Digital <em>Vigil</em></h1>
+  <div class="vault-sub">Private Memorial Vault · Enter passphrase to continue</div>
+  <input type="password" class="vault-input" id="vault-pw" placeholder="Enter vault passphrase" maxlength="40"
+    onkeydown="if(event.key==='Enter') unlockVault()">
+  <div style="height:12px"></div>
+  <button class="vault-btn" onclick="unlockVault()">🔓 &nbsp;Enter Vault</button>
+  <div class="vault-error" id="vault-err">Incorrect passphrase. Please try again.</div>
+  <div class="vault-hint">Demo passphrase: <strong style="color:var(--gold-500)">afterguard</strong></div>
+</div>
+
+<!-- ══ MEMORIAL MAIN ════════════════════════════════════════════════════ -->
+<div id="memorial-main">
+
+  <!-- NAV -->
+  <nav class="mem-nav">
+    <a href="index.html" class="mem-logo">
+      <div class="vault-shield" style="width:28px;height:28px;font-size:12px;background:rgba(212,168,83,0.08);border:1px solid rgba(212,168,83,0.2);border-radius:5px;display:flex;align-items:center;justify-content:center;">🛡</div>
+      <span class="mem-logo-text">AfterGuard</span>
+    </a>
+    <div class="mem-nav-right">
+      <span class="mem-tag">🕯 Digital Vigil</span>
+      <span class="mem-tag" id="candle-nav-count">0 candles lit</span>
+      <button class="mem-lock-btn" onclick="lockVault()">🔒 Lock Vault</button>
+    </div>
+  </nav>
+
+  <!-- HERO / GRAVESTONE -->
+  <div class="mem-hero">
+    <div class="gravestone-wrap">
+      <img src="blankgravestonefreetouse.jpg" class="gravestone-img" alt="Memorial">
+      <div class="gravestone-text">
+        <div class="gravestone-name">John Smith</div>
+        <div class="gravestone-dates">1948 — 2026</div>
+      </div>
+    </div>
+    <h1 class="mem-hero-title">In Loving Memory of<br><em>John Smith</em></h1>
+    <div class="mem-hero-sub">Digital Vigil · Private Memorial · Est. February 2026</div>
+    <div class="mem-stats">
+      <div class="mem-stat"><div class="mem-stat-val" id="stat-candles">0</div><div class="mem-stat-lbl">Candles Lit</div></div>
+      <div class="mem-stat"><div class="mem-stat-val" id="stat-memories">0</div><div class="mem-stat-lbl">Memories Shared</div></div>
+      <div class="mem-stat"><div class="mem-stat-val" id="stat-quotes">0</div><div class="mem-stat-lbl">Words of Light</div></div>
+    </div>
+  </div>
+
+  <div class="mem-content">
+
+    <!-- ── CANDLE ARENA ─────────────────────────────────────── -->
+    <div class="mem-divider"><div class="mem-divider-line"></div><div class="mem-divider-label">Candle Lighting</div><div class="mem-divider-line"></div></div>
+    <div class="mem-panel">
+      <div class="mem-panel-hdr">
+        <div>
+          <div class="mem-panel-eyebrow">Interactive Vigil</div>
+          <div class="mem-panel-title">Light a Candle</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <span class="candle-count" id="candle-count-display">0 candles burning</span>
+          <button class="light-btn" onclick="lightCandle()">🕯 Light a Candle</button>
+        </div>
+      </div>
+      <div class="candle-section">
+        <div class="candle-arena" id="candle-arena">
+          <div class="candle-arena-label" id="arena-hint">
+            <span>🕯</span>
+            Click "Light a Candle" to place your first candle<br>
+            <small style="font-size:9px;opacity:0.6;margin-top:4px;display:block">Drag candles to arrange them</small>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── MEMORIES TIMELINE ────────────────────────────────── -->
+    <div class="mem-divider"><div class="mem-divider-line"></div><div class="mem-divider-label">Memories</div><div class="mem-divider-line"></div></div>
+    <div class="mem-panel">
+      <div class="mem-panel-hdr">
+        <div>
+          <div class="mem-panel-eyebrow">Memory Timeline</div>
+          <div class="mem-panel-title">Shared Remembrances</div>
+        </div>
+      </div>
+      <div class="mem-panel-body">
+        <!-- Timeline entries render here -->
+        <div id="timeline-list"></div>
+
+        <!-- Add Memory Form -->
+        <div class="mem-divider" style="margin-top:24px"><div class="mem-divider-line"></div><div class="mem-divider-label">Add a Memory</div><div class="mem-divider-line"></div></div>
+        <div class="add-memory-form">
+          <div class="form-row">
+            <div>
+              <label class="field-lbl">Your Name</label>
+              <input class="field-in" id="mem-author" placeholder="e.g. Sarah Smith">
+            </div>
+            <div>
+              <label class="field-lbl">Date of Memory</label>
+              <input class="field-in" id="mem-date" type="date">
+            </div>
+          </div>
+          <div style="margin-bottom:12px">
+            <label class="field-lbl">Your Memory</label>
+            <textarea class="field-ta" id="mem-text" placeholder="Share a memory, a story, a moment that meant everything…"></textarea>
+          </div>
+          <div class="photo-drop" id="photo-drop" onclick="document.getElementById('photo-file').click()">
+            <div style="font-size:22px;margin-bottom:6px;opacity:0.5">📷</div>
+            <div class="photo-drop-lbl">Drop a photo or click to add one</div>
+            <div class="photo-preview" id="photo-preview"></div>
+          </div>
+          <input type="file" id="photo-file" accept="image/*" multiple style="display:none">
+          <button class="submit-mem-btn" onclick="addMemory()">+ Add Memory to Timeline</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── WORDS OF LIGHT (QUOTES) ──────────────────────────── -->
+    <div class="mem-divider"><div class="mem-divider-line"></div><div class="mem-divider-label">Words of Light</div><div class="mem-divider-line"></div></div>
+    <div class="mem-panel">
+      <div class="mem-panel-hdr">
+        <div>
+          <div class="mem-panel-eyebrow">Inspiration · Comfort · Love</div>
+          <div class="mem-panel-title">Words of Light</div>
+        </div>
+      </div>
+      <div class="mem-panel-body">
+        <div class="quotes-grid" id="quotes-grid"></div>
+        <div class="add-quote-form">
+          <label class="field-lbl">Write an inspirational quote or message (appears in cursive)</label>
+          <textarea class="add-quote-ta" id="quote-text" placeholder="Those we love don't go away, they walk beside us every day…" rows="3"></textarea>
+          <input class="quote-author-in" id="quote-author" placeholder="— Your name or leave blank for anonymous">
+          <button class="add-quote-btn" onclick="addQuote()">✦ Add to Wall of Light</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── LAST WORDS VAULT ─────────────────────────────────── -->
+    <div class="mem-divider"><div class="mem-divider-line"></div><div class="mem-divider-label">Last Words Vault</div><div class="mem-divider-line"></div></div>
+    <div class="last-words-panel">
+      <div class="lw-icon">💌</div>
+      <h3 class="lw-title">Last Words Vault</h3>
+      <p class="lw-sub">John left sealed messages for loved ones — letters, videos, and final wishes that unlock on specific dates or milestones. Private, encrypted, and delivered with care.</p>
+      <button class="lw-btn" onclick="showToast('Last Words Vault coming in the next release.')">Open Vault Messages →</button>
+    </div>
+
+  </div><!-- /mem-content -->
+</div><!-- /memorial-main -->
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── VAULT LOCK ─────────────────────────────────────────────────────────
+const PASSPHRASE = "afterguard"; // change this to anything
+
+function unlockVault() {
+  const pw = document.getElementById("vault-pw").value.trim();
+  const err = document.getElementById("vault-err");
+  if (pw.toLowerCase() === PASSPHRASE) {
+    const vs = document.getElementById("vault-screen");
+    vs.style.transition = "opacity 0.6s";
+    vs.style.opacity = "0";
+    setTimeout(() => {
+      vs.style.display = "none";
+      document.getElementById("memorial-main").style.display = "block";
+      initPage();
+    }, 600);
+  } else {
+    err.classList.add("show");
+    document.getElementById("vault-pw").style.borderColor = "rgba(229,115,115,0.5)";
+    setTimeout(() => {
+      err.classList.remove("show");
+      document.getElementById("vault-pw").style.borderColor = "";
+    }, 2200);
+  }
+}
+
+function lockVault() {
+  document.getElementById("memorial-main").style.display = "none";
+  const vs = document.getElementById("vault-screen");
+  vs.style.display = "flex";
+  vs.style.opacity = "0";
+  setTimeout(() => { vs.style.opacity = "1"; vs.style.transition = "opacity 0.5s"; }, 10);
+  document.getElementById("vault-pw").value = "";
+}
+
+// ── DATA STORE ─────────────────────────────────────────────────────────
+let memories = [
+  { id: 1, author: "Margaret Smith", date: "2024-06-15", text: "Dad always said the best mornings were the ones spent fishing at Lake Orion. He taught me patience, kindness, and how to tie a proper knot. I'll carry every one of those mornings with me forever.", photo: null },
+  { id: 2, author: "Daniel Smith", date: "2023-12-25", text: "Last Christmas he sat at the head of the table and told stories none of us had ever heard before. He laughed so hard he knocked over his eggnog. That laugh — I can still hear it.", photo: null },
+];
+let quotes = [
+  { id: 1, text: "Those we love don't go away, they walk beside us every day.", author: "— Family" },
+  { id: 2, text: "What we have once enjoyed we can never lose. All that we love deeply becomes part of us.", author: "— Helen Keller" },
+];
+let candles = [];
+let nextMemId = 3;
+let nextQuoteId = 3;
+let nextCandleId = 1;
+let pendingPhotos = [];
+
+// ── INIT ───────────────────────────────────────────────────────────────
+function initPage() {
+  renderMemories();
+  renderQuotes();
+  updateStats();
+  initPhotoDropzone();
+}
+
+// ── STATS ──────────────────────────────────────────────────────────────
+function updateStats() {
+  document.getElementById("stat-candles").textContent = candles.length;
+  document.getElementById("stat-memories").textContent = memories.length;
+  document.getElementById("stat-quotes").textContent = quotes.length;
+  document.getElementById("candle-count-display").textContent = candles.length + " candle" + (candles.length !== 1 ? "s" : "") + " burning";
+  document.getElementById("candle-nav-count").textContent = candles.length + " candles lit";
+}
+
+// ── CANDLE SYSTEM ──────────────────────────────────────────────────────
+function lightCandle() {
+  const arena = document.getElementById("candle-arena");
+  const hint = document.getElementById("arena-hint");
+  if (hint) hint.style.opacity = "0";
+
+  const aW = arena.offsetWidth, aH = arena.offsetHeight;
+  const margin = 50;
+  const x = margin + Math.random() * (aW - margin * 2 - 80);
+  const y = margin + Math.random() * (aH - margin * 2 - 80);
+
+  const id = nextCandleId++;
+  candles.push({ id, x, y });
+
+  const el = document.createElement("div");
+  el.className = "candle";
+  el.id = "candle-" + id;
+  el.style.left = x + "px";
+  el.style.top = y + "px";
+  el.style.animation = "fadeSlideIn 0.4s ease both";
+  el.innerHTML = `<img src="flickering_candle_md_nwm_v2.gif" alt="candle">`;
+  makeDraggable(el, arena);
+  arena.appendChild(el);
+
+  updateStats();
+  showToast("🕯 A candle has been lit in remembrance");
+}
+
+function makeDraggable(el, container) {
+  let startX, startY, startL, startT, dragging = false;
+
+  el.addEventListener("mousedown", e => {
+    dragging = true;
+    startX = e.clientX; startY = e.clientY;
+    startL = parseInt(el.style.left) || 0;
+    startT = parseInt(el.style.top) || 0;
+    el.style.zIndex = 999;
+    el.style.transition = "none";
+    e.preventDefault();
+  });
+
+  // Touch support
+  el.addEventListener("touchstart", e => {
+    const t = e.touches[0];
+    dragging = true;
+    startX = t.clientX; startY = t.clientY;
+    startL = parseInt(el.style.left) || 0;
+    startT = parseInt(el.style.top) || 0;
+    el.style.zIndex = 999;
+    e.preventDefault();
+  }, { passive: false });
+
+  document.addEventListener("mousemove", e => {
+    if (!dragging) return;
+    const dx = e.clientX - startX, dy = e.clientY - startY;
+    const cW = container.offsetWidth, cH = container.offsetHeight;
+    const newL = Math.max(0, Math.min(cW - 80, startL + dx));
+    const newT = Math.max(0, Math.min(cH - 80, startT + dy));
+    el.style.left = newL + "px";
+    el.style.top = newT + "px";
+  });
+
+  document.addEventListener("touchmove", e => {
+    if (!dragging) return;
+    const t = e.touches[0];
+    const dx = t.clientX - startX, dy = t.clientY - startY;
+    const cW = container.offsetWidth, cH = container.offsetHeight;
+    el.style.left = Math.max(0, Math.min(cW - 80, startL + dx)) + "px";
+    el.style.top = Math.max(0, Math.min(cH - 80, startT + dy)) + "px";
+  }, { passive: true });
+
+  document.addEventListener("mouseup", () => { if(dragging){ dragging=false; el.style.zIndex=10; } });
+  document.addEventListener("touchend", () => { dragging = false; el.style.zIndex = 10; });
+}
+
+// ── MEMORIES ──────────────────────────────────────────────────────────
+function renderMemories() {
+  const list = document.getElementById("timeline-list");
+  if (memories.length === 0) {
+    list.innerHTML = '<div style="text-align:center;padding:32px;color:var(--slate-600);font-family:DM Mono,monospace;font-size:10px;letter-spacing:0.12em;text-transform:uppercase">No memories yet — be the first to share one</div>';
+    return;
+  }
+  list.innerHTML = memories.map(m => `
+    <div class="timeline-entry" id="mem-entry-${m.id}">
+      <div class="timeline-dot-col"><div class="t-dot"></div><div class="t-line"></div></div>
+      <div class="timeline-body">
+        <div class="t-meta">
+          <span class="t-author">${m.author}</span>
+          <span>${m.date ? new Date(m.date + "T00:00:00").toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"}) : ""}</span>
+        </div>
+        <p class="t-text">${m.text}</p>
+        ${m.photo ? `<img class="t-photo" src="${m.photo}" alt="Memory photo">` : ""}
+        <button class="t-delete" onclick="deleteMemory(${m.id})">✕ remove</button>
+      </div>
+    </div>
+  `).join("");
+  updateStats();
+}
+
+function addMemory() {
+  const author = document.getElementById("mem-author").value.trim() || "Anonymous";
+  const date = document.getElementById("mem-date").value;
+  const text = document.getElementById("mem-text").value.trim();
+  if (!text) { showToast("Please write something before adding"); return; }
+
+  const photo = pendingPhotos.length > 0 ? pendingPhotos[0] : null;
+  memories.unshift({ id: nextMemId++, author, date, text, photo });
+  pendingPhotos = [];
+  document.getElementById("photo-preview").innerHTML = "";
+  document.getElementById("mem-text").value = "";
+  document.getElementById("mem-author").value = "";
+  document.getElementById("mem-date").value = "";
+  renderMemories();
+  showToast("✓ Memory added to the timeline");
+}
+
+function deleteMemory(id) {
+  memories = memories.filter(m => m.id !== id);
+  renderMemories();
+}
+
+// ── PHOTO DROPZONE ─────────────────────────────────────────────────────
+function initPhotoDropzone() {
+  const drop = document.getElementById("photo-drop");
+  const input = document.getElementById("photo-file");
+
+  drop.addEventListener("dragover", e => { e.preventDefault(); drop.classList.add("over"); });
+  drop.addEventListener("dragleave", () => drop.classList.remove("over"));
+  drop.addEventListener("drop", e => {
+    e.preventDefault(); drop.classList.remove("over");
+    handlePhotoFiles(e.dataTransfer.files);
+  });
+  input.addEventListener("change", () => handlePhotoFiles(input.files));
+}
+
+function handlePhotoFiles(files) {
+  const preview = document.getElementById("photo-preview");
+  Array.from(files).slice(0, 3).forEach(f => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      pendingPhotos.push(e.target.result);
+      const img = document.createElement("img");
+      img.src = e.target.result;
+      preview.appendChild(img);
+    };
+    reader.readAsDataURL(f);
+  });
+}
+
+// ── QUOTES ────────────────────────────────────────────────────────────
+function renderQuotes() {
+  const grid = document.getElementById("quotes-grid");
+  if (quotes.length === 0) {
+    grid.innerHTML = '<div style="color:var(--slate-600);font-family:DM Mono,monospace;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;padding:20px 0">No words of light yet — add the first</div>';
+    return;
+  }
+  grid.innerHTML = quotes.map(q => `
+    <div class="quote-card">
+      <button class="quote-delete" onclick="deleteQuote(${q.id})">✕</button>
+      <div class="quote-mark">"</div>
+      <div class="quote-text">${q.text}</div>
+      <div class="quote-author">${q.author}</div>
+    </div>
+  `).join("");
+  updateStats();
+}
+
+function addQuote() {
+  const text = document.getElementById("quote-text").value.trim();
+  const author = document.getElementById("quote-author").value.trim() || "— Anonymous";
+  if (!text) { showToast("Please write something first"); return; }
+  quotes.unshift({ id: nextQuoteId++, text, author });
+  document.getElementById("quote-text").value = "";
+  document.getElementById("quote-author").value = "";
+  renderQuotes();
+  showToast("✦ Added to the Wall of Light");
+}
+
+function deleteQuote(id) {
+  quotes = quotes.filter(q => q.id !== id);
+  renderQuotes();
+}
+
+// ── TOAST ─────────────────────────────────────────────────────────────
+function showToast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 3000);
+}
+</script>
+</body>
+</html>
