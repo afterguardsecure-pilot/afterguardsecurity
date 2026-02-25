@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AfterGuard — Secure Family Connections After Loss</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Mono:wght@300;400&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --slate-950: #0a0c0f;
+    --slate-900: #0f1318;
+    --slate-800: #171d26;
+    --slate-700: #1f2937;
+    --slate-600: #374151;
+    --slate-400: #9ca3af;
+    --slate-300: #d1d5db;
+    --slate-200: #e5e7eb;
+    --gold-400: #d4a853;
+    --gold-300: #e2bb72;
+    --gold-200: #f0d4a0;
+    --gold-500: #b8922e;
+    --sage: #7a9e8e;
+    --sage-light: #a3c4b5;
+  }
+
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--slate-950);
+    color: var(--slate-300);
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    overflow-x: hidden;
+  }
+
+  /* NAV */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 48px; height: 64px;
+    background: rgba(10,12,15,0.92);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid rgba(212,168,83,0.1);
+  }
+  .nav-logo { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+  .nav-logo-shield {
+    width: 32px; height: 32px;
+    background: rgba(212,168,83,0.08); border: 1px solid rgba(212,168,83,0.2);
+    border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 14px;
+  }
+  .nav-logo-text {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 18px; font-weight: 300; letter-spacing: 0.12em; color: var(--gold-300);
+  }
+  .nav-links { display: flex; align-items: center; gap: 4px; }
+  .nav-links a {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--slate-400); text-decoration: none;
+    padding: 6px 14px; border-radius: 3px; transition: color 0.2s, background 0.2s;
+  }
+  .nav-links a:hover { color: var(--slate-200); background: rgba(255,255,255,0.04); }
+  .nav-cta {
+    background: rgba(212,168,83,0.1) !important;
+    border: 1px solid rgba(212,168,83,0.25) !important;
+    color: var(--gold-300) !important;
+  }
+  .nav-cta:hover { background: rgba(212,168,83,0.18) !important; color: var(--gold-200) !important; }
+
+  /* HERO */
+  .hero {
+    min-height: 100vh; display: grid; grid-template-columns: 1fr 1fr;
+    align-items: center; padding: 100px 80px 80px; gap: 60px;
+    position: relative; overflow: hidden;
+  }
+  .hero::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    background: radial-gradient(ellipse 60% 50% at 70% 50%, rgba(212,168,83,0.06) 0%, transparent 70%),
+                radial-gradient(ellipse 40% 60% at 20% 80%, rgba(122,158,142,0.04) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  .hero::after {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    background-image: linear-gradient(rgba(212,168,83,0.025) 1px, transparent 1px),
+                      linear-gradient(90deg, rgba(212,168,83,0.025) 1px, transparent 1px);
+    background-size: 60px 60px; pointer-events: none;
+  }
+  .hero-text { position: relative; z-index: 1; }
+  .hero-eyebrow {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-family: 'DM Mono', monospace; font-size: 10px;
+    letter-spacing: 0.2em; text-transform: uppercase; color: var(--gold-400); margin-bottom: 28px;
+  }
+  .eyebrow-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--gold-400); box-shadow: 0 0 8px var(--gold-400);
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+  .hero h1 {
+    font-size: clamp(2.6rem, 4.5vw, 4rem); font-weight: 300; line-height: 1.1;
+    color: var(--slate-200); letter-spacing: -0.01em; margin-bottom: 24px;
+  }
+  .hero h1 em { font-style: italic; color: var(--gold-300); }
+  .hero-sub {
+    font-size: 1.1rem; font-weight: 300; line-height: 1.75;
+    color: var(--slate-400); margin-bottom: 40px; max-width: 500px;
+  }
+  .hero-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+
+  .btn-gold {
+    background: rgba(212,168,83,0.12); border: 1px solid rgba(212,168,83,0.35); color: var(--gold-300);
+    padding: 12px 28px; font-family: 'DM Mono', monospace;
+    font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
+    cursor: pointer; text-decoration: none; border-radius: 3px; transition: all 0.2s; display: inline-block;
+  }
+  .btn-gold:hover { background: rgba(212,168,83,0.2); border-color: var(--gold-300); }
+  .btn-ghost {
+    background: transparent; border: 1px solid rgba(255,255,255,0.1); color: var(--slate-400);
+    padding: 12px 28px; font-family: 'DM Mono', monospace;
+    font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
+    cursor: pointer; text-decoration: none; border-radius: 3px; transition: all 0.2s; display: inline-block;
+  }
+  .btn-ghost:hover { border-color: rgba(255,255,255,0.2); color: var(--slate-200); }
+
+  .hero-visual { position: relative; z-index: 1; display: flex; justify-content: center; }
+  .portal-card {
+    background: var(--slate-900); border: 1px solid rgba(212,168,83,0.15);
+    border-radius: 8px; width: 360px; overflow: hidden;
+    box-shadow: 0 24px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(212,168,83,0.05);
+  }
+  .portal-card-header {
+    padding: 16px 20px; border-bottom: 1px solid rgba(212,168,83,0.1);
+    background: rgba(212,168,83,0.04);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .portal-card-title { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--gold-400); }
+  .portal-status { display: flex; align-items: center; gap: 6px; font-family: 'DM Mono', monospace; font-size: 9px; color: var(--sage-light); letter-spacing: 0.08em; }
+  .status-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--sage-light); box-shadow: 0 0 6px var(--sage-light); animation: pulse 2s ease-in-out infinite; }
+  .portal-estate { padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,0.04); }
+  .estate-name { font-size: 17px; font-weight: 400; color: var(--slate-200); margin-bottom: 2px; }
+  .estate-id { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--slate-600); letter-spacing: 0.1em; }
+  .portal-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 20px; border-bottom: 1px solid rgba(255,255,255,0.03); font-size: 13px;
+  }
+  .portal-row:last-child { border-bottom: none; }
+  .row-label { color: var(--slate-400); display: flex; align-items: center; gap: 8px; }
+  .row-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+  .dot-green { background: #4caf86; box-shadow: 0 0 6px #4caf86; }
+  .dot-gold { background: var(--gold-400); box-shadow: 0 0 6px var(--gold-400); }
+  .dot-sage { background: var(--sage-light); box-shadow: 0 0 6px var(--sage-light); }
+  .dot-blue { background: #6b9fd4; box-shadow: 0 0 6px #6b9fd4; }
+  .row-val { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--slate-300); }
+  .row-val.ok { color: var(--sage-light); }
+  .row-val.gold { color: var(--gold-300); }
+  .portal-footer-bar {
+    padding: 12px 20px; background: rgba(212,168,83,0.04); border-top: 1px solid rgba(212,168,83,0.1);
+    font-family: 'DM Mono', monospace; font-size: 9px; color: var(--gold-500); letter-spacing: 0.12em; text-transform: uppercase;
+    display: flex; align-items: center; gap: 6px;
+  }
+
+  /* TRUST BAR */
+  .trust-bar {
+    border-top: 1px solid rgba(212,168,83,0.08); border-bottom: 1px solid rgba(212,168,83,0.08);
+    background: var(--slate-900); padding: 22px 80px;
+    display: flex; align-items: center; justify-content: center; gap: 60px; flex-wrap: wrap;
+  }
+  .trust-item { display: flex; align-items: center; gap: 8px; font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--slate-400); }
+  .trust-icon { color: var(--gold-400); }
+
+  /* SECTIONS */
+  .section { padding: 90px 80px; }
+  .section-eyebrow { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gold-400); margin-bottom: 12px; }
+  .section h2 { font-size: clamp(1.8rem, 3vw, 2.8rem); font-weight: 300; line-height: 1.2; color: var(--slate-200); margin-bottom: 16px; }
+  .section h2 em { font-style: italic; color: var(--gold-300); }
+  .section-intro { font-size: 1rem; font-weight: 300; line-height: 1.75; color: var(--slate-400); max-width: 540px; margin-bottom: 56px; }
+
+  /* HOW IT WORKS */
+  .how-section { background: var(--slate-950); }
+  .how-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: rgba(212,168,83,0.08); border: 1px solid rgba(212,168,83,0.08); border-radius: 6px; overflow: hidden; }
+  .how-card { background: var(--slate-900); padding: 36px 32px; transition: background 0.2s; position: relative; }
+  .how-card:hover { background: rgba(212,168,83,0.025); }
+  .how-number { font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.15em; color: var(--slate-600); margin-bottom: 20px; }
+  .how-card-icon { width: 40px; height: 40px; background: rgba(212,168,83,0.08); border: 1px solid rgba(212,168,83,0.15); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 18px; margin-bottom: 20px; }
+  .how-card h3 { font-size: 1.25rem; font-weight: 400; color: var(--slate-200); margin-bottom: 12px; }
+  .how-card p { font-size: 0.9rem; font-weight: 300; color: var(--slate-400); line-height: 1.7; }
+  .how-line { position: absolute; bottom: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, var(--gold-500), transparent); opacity: 0; transition: opacity 0.2s; }
+  .how-card:hover .how-line { opacity: 1; }
+
+  /* FEATURES */
+  .features-section { background: var(--slate-900); border-top: 1px solid rgba(212,168,83,0.08); border-bottom: 1px solid rgba(212,168,83,0.08); }
+  .features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.04); border-radius: 6px; overflow: hidden; }
+  .feature-item { background: var(--slate-900); padding: 28px; transition: background 0.2s; }
+  .feature-item:hover { background: rgba(212,168,83,0.02); }
+  .feature-icon { width: 36px; height: 36px; background: rgba(212,168,83,0.06); border: 1px solid rgba(212,168,83,0.12); border-radius: 5px; display: flex; align-items: center; justify-content: center; font-size: 16px; margin-bottom: 16px; }
+  .feature-item h3 { font-size: 1.1rem; font-weight: 400; color: var(--slate-200); margin-bottom: 8px; }
+  .feature-item p { font-size: 0.875rem; font-weight: 300; color: var(--slate-400); line-height: 1.65; }
+
+  /* PRICING */
+  .pricing-section { background: var(--slate-950); }
+  .pricing-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; align-items: start; }
+  .plan-card {
+    background: var(--slate-900); border: 1px solid rgba(212,168,83,0.1);
+    border-radius: 6px; padding: 32px 28px; position: relative;
+    transition: border-color 0.25s, box-shadow 0.25s, transform 0.25s;
+  }
+  .plan-card:hover { border-color: rgba(212,168,83,0.22); transform: translateY(-4px); box-shadow: 0 16px 48px rgba(0,0,0,0.35); }
+  .plan-card.popular { border-color: rgba(212,168,83,0.35); box-shadow: 0 0 0 1px rgba(212,168,83,0.12), 0 8px 40px rgba(0,0,0,0.3); }
+  .plan-card.popular:hover { border-color: var(--gold-400); }
+  .popular-badge {
+    position: absolute; top: -11px; left: 50%; transform: translateX(-50%);
+    background: var(--gold-500); color: var(--slate-950);
+    font-family: 'DM Mono', monospace; font-size: 9px; font-weight: 400;
+    letter-spacing: 0.15em; text-transform: uppercase; padding: 4px 14px; border-radius: 20px; white-space: nowrap;
+  }
+  .plan-tier { font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--slate-600); margin-bottom: 14px; }
+  .plan-price { font-family: 'Cormorant Garamond', serif; font-size: 3.2rem; font-weight: 300; color: var(--slate-200); line-height: 1; margin-bottom: 4px; }
+  .plan-price sup { font-size: 1.2rem; vertical-align: super; }
+  .plan-price .per { font-family: 'DM Mono', monospace; font-size: 0.75rem; color: var(--slate-600); letter-spacing: 0.08em; }
+  .plan-desc { font-size: 0.875rem; font-weight: 300; color: var(--slate-400); line-height: 1.6; padding-bottom: 22px; margin-bottom: 22px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+
+  /* SLIDER */
+  .slider-block { margin-bottom: 20px; }
+  .slider-labels { display: flex; justify-content: space-between; align-items: center; font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.08em; color: var(--slate-400); margin-bottom: 12px; }
+  .slider-labels strong { color: var(--gold-300); }
+  .slider-wrap { position: relative; height: 24px; display: flex; align-items: center; }
+  .slider-track { position: absolute; left: 0; right: 0; height: 2px; background: rgba(255,255,255,0.07); border-radius: 2px; }
+  .slider-fill { position: absolute; left: 0; height: 2px; background: linear-gradient(90deg, var(--gold-500), var(--gold-300)); border-radius: 2px; pointer-events: none; transition: width 0s; }
+
+  input[type=range] {
+    -webkit-appearance: none; appearance: none;
+    position: absolute; left: 0; width: 100%;
+    height: 2px; background: transparent; border: none; outline: none; cursor: pointer; z-index: 2; margin: 0; padding: 0;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 20px; height: 20px; border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, var(--gold-200), var(--gold-400));
+    border: 2px solid var(--slate-900);
+    box-shadow: 0 0 0 2px rgba(212,168,83,0.35), 0 2px 10px rgba(0,0,0,0.5);
+    cursor: pointer; transition: transform 0.12s, box-shadow 0.12s;
+  }
+  input[type=range]:active::-webkit-slider-thumb {
+    transform: scale(1.2);
+    box-shadow: 0 0 0 4px rgba(212,168,83,0.25), 0 2px 14px rgba(0,0,0,0.6);
+  }
+  input[type=range]::-moz-range-thumb {
+    width: 20px; height: 20px; border-radius: 50%;
+    background: var(--gold-300); border: 2px solid var(--slate-900);
+    box-shadow: 0 0 0 2px rgba(212,168,83,0.35); cursor: pointer;
+  }
+  input[type=range]::-moz-range-track { background: transparent; height: 2px; }
+  .slider-ends { display: flex; justify-content: space-between; margin-top: 6px; }
+  .slider-ends span { font-family: 'DM Mono', monospace; font-size: 9px; color: var(--slate-600); }
+
+  /* PLAN FEATURES */
+  .plan-features { list-style: none; margin-bottom: 28px; }
+  .plan-features li { display: flex; align-items: flex-start; gap: 10px; padding: 6px 0; font-size: 0.875rem; font-weight: 300; color: var(--slate-300); border-bottom: 1px solid rgba(255,255,255,0.03); }
+  .plan-features li:last-child { border-bottom: none; }
+  .plan-features li::before { content: '✓'; color: var(--gold-400); font-size: 0.75rem; flex-shrink: 0; margin-top: 2px; }
+  .feat-section { font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--slate-600); padding: 8px 0 2px; border-bottom: none !important; display: block; }
+  .feat-section::before { display: none !important; }
+
+  .plan-btn {
+    width: 100%; padding: 13px 20px; border-radius: 3px;
+    font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase;
+    cursor: pointer; transition: all 0.2s; border: none; text-align: center; display: block; text-decoration: none;
+  }
+  .plan-btn.ghost { background: transparent; border: 1px solid rgba(212,168,83,0.18); color: var(--slate-400); }
+  .plan-btn.ghost:hover { border-color: rgba(212,168,83,0.4); color: var(--gold-300); }
+  .plan-btn.gold-btn { background: rgba(212,168,83,0.1); border: 1px solid rgba(212,168,83,0.28); color: var(--gold-300); }
+  .plan-btn.gold-btn:hover { background: rgba(212,168,83,0.18); border-color: var(--gold-300); }
+  .plan-btn.filled { background: var(--gold-500); color: var(--slate-950); border: 1px solid var(--gold-400); font-weight: 400; }
+  .plan-btn.filled:hover { background: var(--gold-400); }
+
+  /* CTA */
+  .cta-section {
+    background: var(--slate-900); border-top: 1px solid rgba(212,168,83,0.1); border-bottom: 1px solid rgba(212,168,83,0.1);
+    padding: 90px 80px; text-align: center; position: relative; overflow: hidden;
+  }
+  .cta-section::before {
+    content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+    width: 700px; height: 400px;
+    background: radial-gradient(ellipse, rgba(212,168,83,0.07) 0%, transparent 70%); pointer-events: none;
+  }
+  .cta-section .section-eyebrow { display: block; margin-bottom: 12px; }
+  .cta-section h2 { max-width: 560px; margin: 0 auto 16px; }
+  .cta-section p { color: var(--slate-400); font-size: 1rem; margin-bottom: 40px; max-width: 440px; margin-left: auto; margin-right: auto; font-weight: 300; }
+
+  /* FOOTER */
+  footer { background: var(--slate-950); border-top: 1px solid rgba(212,168,83,0.08); padding: 28px 80px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+  .footer-logo { font-family: 'Cormorant Garamond', serif; font-size: 15px; font-weight: 300; letter-spacing: 0.12em; color: var(--gold-300); }
+  footer p { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.06em; color: var(--slate-600); }
+  footer .footer-links { display: flex; gap: 24px; }
+  footer a { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--slate-600); text-decoration: none; transition: color 0.2s; }
+  footer a:hover { color: var(--gold-400); }
+
+  /* ANIMATIONS */
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+  .hero-text > * { animation: fadeUp 0.7s ease both; }
+  .hero-eyebrow { animation-delay: 0.05s; }
+  .hero h1 { animation-delay: 0.15s; }
+  .hero-sub { animation-delay: 0.25s; }
+  .hero-actions { animation-delay: 0.35s; }
+  .hero-visual { animation: fadeUp 0.8s 0.5s ease both; }
+
+  @media (max-width: 960px) {
+    .hero { grid-template-columns: 1fr; padding: 100px 32px 60px; }
+    .hero-visual { display: none; }
+    .section { padding: 60px 32px; }
+    .how-grid, .features-grid { grid-template-columns: 1fr; }
+    .pricing-grid { grid-template-columns: 1fr; }
+    .trust-bar { padding: 20px 32px; gap: 24px; }
+    footer { padding: 24px 32px; }
+    nav { padding: 0 24px; }
+    .cta-section { padding: 60px 32px; }
+    .nav-links { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="#" class="nav-logo">
+    <div class="nav-logo-shield">🛡</div>
+    <span class="nav-logo-text">AfterGuard</span>
+  </a>
+  <div class="nav-links">
+    <a href="#how">How It Works</a>
+    <a href="#features">Features</a>
+    <a href="#pricing">Pricing</a>
+    <a href="#contact" class="nav-cta">Contact</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-text">
+    <div class="hero-eyebrow"><span class="eyebrow-dot"></span>Secure Death Care Platform</div>
+    <h1>Protecting families at<br>life's most <em>vulnerable</em><br>moment</h1>
+    <p class="hero-sub">AfterGuard provides a centralized, encrypted platform connecting families of the deceased directly to funeral homes — so that sensitive records, documents, and communications are protected, organized, and accessible only to those who matter.</p>
+    <div class="hero-actions">
+      <a href="#pricing" class="btn-gold">View Plans</a>
+      <a href="#how" class="btn-ghost">How It Works</a>
+    </div>
+  </div>
+  <div class="hero-visual">
+    <div class="portal-card">
+      <div class="portal-card-header">
+        <span class="portal-card-title">Estate Portal · AG-2024-0871</span>
+        <span class="portal-status"><span class="status-dot"></span> Secure</span>
+      </div>
+      <div class="portal-estate">
+        <div class="estate-name">Robert A. Whitmore Estate</div>
+        <div class="estate-id">FILE #W-2026-031 · ACTIVE</div>
+      </div>
+      <div class="portal-row"><span class="row-label"><span class="row-dot dot-green"></span>Funeral Home Connection</span><span class="row-val ok">✓ Verified</span></div>
+      <div class="portal-row"><span class="row-label"><span class="row-dot dot-gold"></span>Documents Stored</span><span class="row-val gold">14 files</span></div>
+      <div class="portal-row"><span class="row-label"><span class="row-dot dot-sage"></span>Family Access Granted</span><span class="row-val">3 members</span></div>
+      <div class="portal-row"><span class="row-label"><span class="row-dot dot-green"></span>Encryption</span><span class="row-val ok">AES-256 Active</span></div>
+      <div class="portal-row"><span class="row-label"><span class="row-dot dot-blue"></span>Last Audit</span><span class="row-val">Today, 09:42</span></div>
+      <div class="portal-row"><span class="row-label"><span class="row-dot dot-green"></span>Threat Alerts</span><span class="row-val ok">0 issues</span></div>
+      <div class="portal-footer-bar">🔒 AfterGuard Secure — All data encrypted at rest &amp; in transit</div>
+    </div>
+  </div>
+</section>
+
+<!-- TRUST BAR -->
+<div class="trust-bar">
+  <div class="trust-item"><span class="trust-icon">◈</span> End-to-End Encrypted</div>
+  <div class="trust-item"><span class="trust-icon">◈</span> HIPAA-Aligned</div>
+  <div class="trust-item"><span class="trust-icon">◈</span> 24/7 Secure Access</div>
+  <div class="trust-item"><span class="trust-icon">◈</span> Verified Funeral Homes</div>
+  <div class="trust-item"><span class="trust-icon">◈</span> Centralized Records</div>
+</div>
+
+<!-- HOW IT WORKS -->
+<section id="how" class="section how-section">
+  <div class="section-eyebrow">Process</div>
+  <h2>Simple, secure, <em>compassionate</em></h2>
+  <p class="section-intro">AfterGuard removes the complexity from one of life's most difficult moments. Three steps to bring clarity and connection when it matters most.</p>
+  <div class="how-grid">
+    <div class="how-card">
+      <div class="how-number">01 / 03</div>
+      <div class="how-card-icon">👨‍👩‍👧</div>
+      <h3>Family Creates a Secure Portal</h3>
+      <p>Upon the passing of a loved one, authorized family members register on AfterGuard and establish a private, encrypted estate portal — accessible only to those they personally invite.</p>
+      <div class="how-line"></div>
+    </div>
+    <div class="how-card">
+      <div class="how-number">02 / 03</div>
+      <div class="how-card-icon">🏛️</div>
+      <h3>Funeral Home Connects Directly</h3>
+      <p>Partnered funeral homes receive a verified secure link to the portal. Documents, preferences, and communications are shared in real time with no third-party intermediaries.</p>
+      <div class="how-line"></div>
+    </div>
+    <div class="how-card">
+      <div class="how-number">03 / 03</div>
+      <div class="how-card-icon">📂</div>
+      <h3>Everything Lives in One Place</h3>
+      <p>Death certificates, legal documents, final wishes, and all communications — stored in a single encrypted vault, accessible to the right people, at the right time, always.</p>
+      <div class="how-line"></div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section id="features" class="section features-section">
+  <div class="section-eyebrow">Platform Features</div>
+  <h2>Built for sensitivity<br>and <em>security</em></h2>
+  <p class="section-intro">Every feature of AfterGuard is designed with two priorities: protecting your most private information and making an incredibly difficult process a little easier.</p>
+  <div class="features-grid">
+    <div class="feature-item">
+      <div class="feature-icon">🔐</div>
+      <h3>Military-Grade Encryption</h3>
+      <p>All data encrypted at rest and in transit using AES-256. Your family's information is protected at every step — no exceptions, no compromises.</p>
+    </div>
+    <div class="feature-item">
+      <div class="feature-icon">👥</div>
+      <h3>Role-Based Family Access</h3>
+      <p>Grant specific family members, executors, or attorneys view-only or full access. Control who sees what and revoke permissions at any time.</p>
+    </div>
+    <div class="feature-item">
+      <div class="feature-icon">🏢</div>
+      <h3>Verified Funeral Home Network</h3>
+      <p>Connect directly with licensed, background-checked funeral homes in our network. No confusion over who to contact or where critical documents should go.</p>
+    </div>
+    <div class="feature-item">
+      <div class="feature-icon">📄</div>
+      <h3>Centralized Document Vault</h3>
+      <p>Store death certificates, wills, insurance policies, and more in one organized, searchable vault with version history and point-in-time recovery.</p>
+    </div>
+    <div class="feature-item">
+      <div class="feature-icon">💬</div>
+      <h3>Secure Messaging</h3>
+      <p>Communicate with funeral home staff, legal counsel, and family through an encrypted messaging layer built directly into each estate portal.</p>
+    </div>
+    <div class="feature-item">
+      <div class="feature-icon">📋</div>
+      <h3>Guided Estate Checklist</h3>
+      <p>Step-by-step checklists tailored to your situation ensure nothing is missed during an already overwhelming time. Audit-ready at every stage.</p>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section id="pricing" class="section pricing-section">
+  <div class="section-eyebrow">Pricing</div>
+  <h2>Transparent plans<br>for every <em>need</em></h2>
+  <p class="section-intro">Whether you're a family navigating a single estate or a funeral home serving hundreds of families, AfterGuard has a plan built for you.</p>
+  <div class="pricing-grid">
+
+    <!-- ESSENTIAL -->
+    <div class="plan-card">
+      <div class="plan-tier">Essential</div>
+      <div class="plan-price"><sup>$</sup>0 <span class="per">/mo</span></div>
+      <p class="plan-desc">For individuals navigating a single estate. Free to get started — no credit card required.</p>
+      <ul class="plan-features">
+        <li>1 Estate Portal</li>
+        <li>Up to 3 family members</li>
+        <li>Document storage (500 MB)</li>
+        <li>Funeral home connection</li>
+        <li>Basic estate checklist</li>
+        <li>Encrypted messaging</li>
+        <li>Two-factor authentication</li>
+      </ul>
+      <button class="plan-btn ghost">Get Started Free</button>
+    </div>
+
+    <!-- FAMILY PRO -->
+    <div class="plan-card popular">
+      <div class="popular-badge">Most Popular</div>
+      <div class="plan-tier">Family Pro</div>
+      <div class="plan-price"><sup>$</sup><span id="pro-val">50</span> <span class="per">/mo</span></div>
+      <p class="plan-desc">For families managing multiple estates or requiring extended access across multiple members.</p>
+
+      <div class="slider-block">
+        <div class="slider-labels">
+          <span>Monthly plan cost</span>
+          <strong id="seats-display">$50 / mo</strong>
+        </div>
+        <div class="slider-wrap">
+          <div class="slider-track"></div>
+          <div class="slider-fill" id="slider-fill" style="width:0%"></div>
+          <input type="range" min="50" max="500" step="1" value="50" id="pro-slider" oninput="updateProPrice(this.value)">
+        </div>
+        <div class="slider-ends">
+          <span>$50</span>
+          <span>$500</span>
+        </div>
+      </div>
+
+      <ul class="plan-features">
+        <li class="feat-section">Everything in Essential, plus:</li>
+        <li>Up to <span id="members-text">5</span> family members</li>
+        <li>Unlimited document storage</li>
+        <li>Point-in-time document recovery</li>
+        <li>Advanced role-based permissions</li>
+        <li>Priority funeral home matching</li>
+        <li>Legal &amp; estate attorney access layer</li>
+        <li>Full audit log &amp; activity history</li>
+        <li>SAML SSO (for law firms)</li>
+      </ul>
+      <button class="plan-btn filled">Start Family Pro</button>
+    </div>
+
+    <!-- ENTERPRISE -->
+    <div class="plan-card">
+      <div class="plan-tier">Funeral Home / Enterprise</div>
+      <div style="font-family:'Cormorant Garamond',serif; font-size:2rem; font-weight:300; color:var(--slate-200); margin-bottom:4px;">Custom</div>
+      <p class="plan-desc">For funeral homes, law firms, and estate management organizations. Flexible pricing that scales with your operation.</p>
+      <ul class="plan-features">
+        <li class="feat-section">Everything in Family Pro, plus:</li>
+        <li>Dedicated infrastructure</li>
+        <li>White-label portal options</li>
+        <li>LDAP / SAML authentication</li>
+        <li>Enterprise SCIM provisioning</li>
+        <li>Custom integrations &amp; API access</li>
+        <li>Dedicated account manager</li>
+        <li>SLA guarantees &amp; uptime support</li>
+        <li>Staff training &amp; onboarding</li>
+        <li>Compliance reporting tools</li>
+      </ul>
+      <a href="mailto:afterguardsecure@gmail.com" class="plan-btn gold-btn">Contact Us</a>
+    </div>
+
+  </div>
+</section>
+
+<!-- CTA -->
+<section id="contact" class="cta-section section">
+  <div class="section-eyebrow">Get In Touch</div>
+  <h2>Ready to protect<br>the families you <em>serve</em>?</h2>
+  <p>Questions about AfterGuard, our funeral home partnership program, or enterprise options? We're here.</p>
+  <a href="mailto:afterguardsecure@gmail.com" class="btn-gold">📧 &nbsp;afterguardsecure@gmail.com</a>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <span class="footer-logo">AfterGuard</span>
+  <p>© 2024 AfterGuard. Protecting families when it matters most.</p>
+  <div class="footer-links">
+    <a href="mailto:afterguardsecure@gmail.com">Contact</a>
+    <a href="#">Privacy Policy</a>
+    <a href="#">Terms of Service</a>
+  </div>
+</footer>
+
+<script>
+  function updateProPrice(val) {
+    const v = parseInt(val);
+    document.getElementById('pro-val').textContent = v;
+    document.getElementById('seats-display').textContent = '$' + v + ' / mo';
+
+    // members scale
+    let members;
+    if (v <= 100) members = 5;
+    else if (v <= 200) members = 10;
+    else if (v <= 350) members = 20;
+    else members = 'Unlimited';
+    document.getElementById('members-text').textContent = members;
+
+    // smooth fill bar
+    const pct = (v - 50) / (500 - 50) * 100;
+    document.getElementById('slider-fill').style.width = pct + '%';
+  }
+
+  // init on load
+  updateProPrice(50);
+</script>
+</body>
+</html>
