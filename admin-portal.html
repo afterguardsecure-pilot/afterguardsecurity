@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AfterGuard — Admin Portal</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--slate-950:#0a0c0f;--slate-900:#0f1318;--slate-800:#171d26;--slate-700:#1f2937;--slate-600:#374151;--slate-400:#9ca3af;--slate-300:#d1d5db;--slate-200:#e5e7eb;--gold-400:#d4a853;--gold-300:#e2bb72;--gold-500:#b8922e;--sage:#7a9e8e;--sage-light:#a3c4b5;--danger:#c0392b;}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--slate-950);color:var(--slate-300);font-family:'Cormorant Garamond',Georgia,serif;min-height:100vh;}
+
+/* ── LOGIN SCREEN ── */
+#login-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--slate-950);}
+.login-box{width:100%;max-width:380px;background:var(--slate-900);border:1px solid rgba(212,168,83,0.2);border-radius:8px;padding:40px;box-shadow:0 32px 80px rgba(0,0,0,0.6);}
+.login-logo{display:flex;align-items:center;gap:12px;margin-bottom:32px;}
+.login-shield{width:36px;height:36px;background:rgba(212,168,83,0.1);border:1px solid rgba(212,168,83,0.3);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;}
+.login-brand{font-size:18px;font-weight:300;letter-spacing:0.12em;color:var(--gold-300);}
+.login-title{font-size:1.6rem;font-weight:300;color:var(--slate-200);margin-bottom:4px;}
+.login-sub{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:var(--slate-600);margin-bottom:28px;}
+.login-field{margin-bottom:16px;}
+.login-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:var(--slate-400);display:block;margin-bottom:7px;}
+.login-input{width:100%;padding:12px 14px;background:var(--slate-800);border:1px solid rgba(212,168,83,0.12);border-radius:3px;color:var(--slate-200);font-family:'DM Mono',monospace;font-size:12px;outline:none;transition:border-color 0.2s;}
+.login-input:focus{border-color:rgba(212,168,83,0.4);}
+.login-input::placeholder{color:var(--slate-600);}
+.login-btn{width:100%;padding:13px;background:var(--gold-500);border:1px solid var(--gold-400);color:var(--slate-950);font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;cursor:pointer;border-radius:3px;transition:all 0.2s;margin-top:8px;}
+.login-btn:hover{background:var(--gold-400);}
+.login-err{background:rgba(192,57,43,0.12);border:1px solid rgba(192,57,43,0.3);color:#ef9a9a;border-radius:4px;padding:11px 14px;font-family:'DM Mono',monospace;font-size:11px;margin-bottom:14px;display:none;}
+.login-err.show{display:block;}
+.back-to-auth{display:block;text-align:center;margin-top:20px;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--slate-700);text-decoration:none;transition:color 0.2s;}
+.back-to-auth:hover{color:var(--gold-400);}
+
+/* ── ADMIN LAYOUT ── */
+#admin-screen{display:none;}
+.admin-layout{display:grid;grid-template-columns:240px 1fr;min-height:100vh;}
+
+/* SIDEBAR */
+.sidebar{background:var(--slate-900);border-right:1px solid rgba(212,168,83,0.12);display:flex;flex-direction:column;position:fixed;top:0;bottom:0;width:240px;z-index:100;}
+.sidebar-logo{padding:28px 24px 22px;border-bottom:1px solid rgba(212,168,83,0.1);}
+.sidebar-logo-mark{display:flex;align-items:center;gap:10px;margin-bottom:4px;}
+.sidebar-logo-shield{width:30px;height:30px;background:rgba(212,168,83,0.1);border:1px solid rgba(212,168,83,0.25);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;}
+.sidebar-logo-name{font-size:15px;font-weight:300;letter-spacing:0.12em;color:var(--gold-300);}
+.sidebar-logo-tag{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.2em;text-transform:uppercase;color:var(--danger);margin-left:40px;margin-top:2px;}
+.sidebar-nav{flex:1;padding:20px 0;overflow-y:auto;}
+.nav-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.22em;text-transform:uppercase;color:var(--slate-600);padding:0 24px;margin-bottom:6px;margin-top:16px;}
+.nav-item{display:flex;align-items:center;gap:12px;padding:10px 24px;font-size:14px;color:var(--slate-400);border-left:2px solid transparent;cursor:pointer;transition:all 0.2s;text-decoration:none;}
+.nav-item:hover{color:var(--slate-200);background:rgba(212,168,83,0.04);}
+.nav-item.active{color:var(--gold-300);border-left-color:var(--gold-400);background:rgba(212,168,83,0.06);}
+.nav-icon{width:18px;text-align:center;flex-shrink:0;}
+.sidebar-footer{padding:16px 24px;border-top:1px solid rgba(212,168,83,0.08);}
+.admin-badge{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+.admin-avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--danger),var(--gold-500));display:flex;align-items:center;justify-content:center;font-size:12px;color:white;font-weight:700;}
+.admin-info{flex:1;}
+.admin-name-label{font-size:13px;color:var(--slate-200);}
+.admin-role-label{font-family:'DM Mono',monospace;font-size:9px;color:var(--danger);letter-spacing:0.1em;text-transform:uppercase;}
+.signout-btn{width:100%;background:transparent;border:1px solid rgba(212,168,83,0.12);border-radius:3px;color:var(--slate-400);font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;padding:7px;cursor:pointer;transition:all 0.2s;}
+.signout-btn:hover{border-color:rgba(212,168,83,0.3);color:var(--gold-300);}
+
+/* MAIN */
+.admin-main{margin-left:240px;min-height:100vh;display:flex;flex-direction:column;}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:20px 36px;border-bottom:1px solid rgba(212,168,83,0.08);background:var(--slate-950);position:sticky;top:0;z-index:50;backdrop-filter:blur(12px);}
+.page-eyebrow{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:#ef9a9a;margin-bottom:2px;}
+.page-title{font-size:24px;font-weight:300;color:var(--slate-200);}
+.content{padding:32px 36px;flex:1;}
+
+/* STAT CARDS */
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px;}
+.stat-card{background:var(--slate-900);border:1px solid rgba(212,168,83,0.1);border-radius:6px;padding:20px 22px;position:relative;overflow:hidden;}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--accent,var(--gold-500));opacity:0.6;}
+.stat-val{font-family:'Cormorant Garamond',serif;font-size:38px;font-weight:300;color:var(--slate-100);line-height:1;margin-bottom:4px;}
+.stat-lbl{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:var(--slate-600);}
+
+/* PANEL */
+.panel{background:var(--slate-900);border:1px solid rgba(212,168,83,0.1);border-radius:6px;overflow:hidden;margin-bottom:24px;}
+.panel-header{display:flex;align-items:center;justify-content:space-between;padding:18px 24px;border-bottom:1px solid rgba(212,168,83,0.07);}
+.panel-eyebrow{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--gold-400);margin-bottom:3px;}
+.panel-title{font-size:16px;font-weight:400;color:var(--slate-200);}
+.panel-body{padding:22px 24px;}
+
+/* TABLE */
+.tbl{width:100%;border-collapse:collapse;}
+.tbl th{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:var(--slate-600);padding:10px 16px;text-align:left;border-bottom:1px solid rgba(212,168,83,0.08);}
+.tbl td{padding:13px 16px;font-size:13.5px;border-bottom:1px solid rgba(255,255,255,0.03);vertical-align:middle;}
+.tbl tr:last-child td{border-bottom:none;}
+.tbl tr:hover td{background:rgba(212,168,83,0.02);}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:7px;padding:8px 16px;border-radius:4px;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.08em;cursor:pointer;transition:all 0.2s;border:none;text-decoration:none;white-space:nowrap;}
+.btn-gold{background:var(--gold-500);color:var(--slate-950);font-weight:600;}
+.btn-gold:hover{background:var(--gold-400);}
+.btn-ghost{background:transparent;color:var(--slate-400);border:1px solid var(--slate-700);}
+.btn-ghost:hover{color:var(--slate-200);border-color:var(--slate-500);}
+.btn-danger{background:rgba(192,57,43,0.15);border:1px solid rgba(192,57,43,0.3);color:#ef9a9a;}
+.btn-danger:hover{background:rgba(192,57,43,0.25);}
+.btn-sage{background:rgba(122,158,142,0.12);border:1px solid rgba(122,158,142,0.25);color:var(--sage-light);}
+.btn-sage:hover{background:rgba(122,158,142,0.2);}
+.btn-sm{padding:4px 10px;font-size:10px;}
+
+/* TAGS */
+.tag{display:inline-flex;align-items:center;font-family:'DM Mono',monospace;font-size:10px;padding:3px 9px;border-radius:99px;}
+.tag-green{background:rgba(45,106,79,0.15);color:var(--sage-light);border:1px solid rgba(45,106,79,0.25);}
+.tag-yellow{background:rgba(217,119,6,0.15);color:#fbbf24;border:1px solid rgba(217,119,6,0.25);}
+.tag-red{background:rgba(192,57,43,0.15);color:#ef9a9a;border:1px solid rgba(192,57,43,0.25);}
+.tag-gold{background:rgba(212,168,83,0.1);color:var(--gold-300);border:1px solid rgba(212,168,83,0.2);}
+.tag-blue{background:rgba(59,130,246,0.12);color:#93c5fd;border:1px solid rgba(59,130,246,0.2);}
+
+/* CODE DISPLAY */
+.code-badge{font-family:'DM Mono',monospace;font-size:11px;color:var(--gold-200);background:rgba(212,168,83,0.08);border:1px solid rgba(212,168,83,0.18);padding:4px 10px;border-radius:3px;letter-spacing:0.06em;cursor:pointer;transition:background 0.2s;}
+.code-badge:hover{background:rgba(212,168,83,0.15);}
+
+/* FORM FIELDS */
+.field-group{margin-bottom:14px;}
+.field-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:var(--slate-400);display:block;margin-bottom:7px;}
+.field-input{width:100%;padding:10px 14px;background:var(--slate-800);border:1px solid rgba(212,168,83,0.1);border-radius:3px;color:var(--slate-200);font-family:'DM Mono',monospace;font-size:12px;outline:none;transition:border-color 0.2s;}
+.field-input:focus{border-color:rgba(212,168,83,0.4);}
+.field-input::placeholder{color:var(--slate-600);}
+select.field-input option{background:var(--slate-800);}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:1000;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--slate-900);border:1px solid rgba(212,168,83,0.2);border-radius:8px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;box-shadow:0 32px 80px rgba(0,0,0,0.7);}
+.modal-header{display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid rgba(212,168,83,0.08);}
+.modal-title{font-size:18px;font-weight:400;color:var(--slate-200);}
+.modal-eyebrow{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:var(--gold-400);margin-bottom:3px;}
+.modal-close{background:none;border:none;color:var(--slate-600);font-size:20px;cursor:pointer;transition:color 0.2s;}
+.modal-close:hover{color:var(--slate-200);}
+.modal-body{padding:24px;}
+.modal-footer{padding:16px 24px;border-top:1px solid rgba(212,168,83,0.08);display:flex;gap:10px;justify-content:flex-end;}
+
+/* ALERT */
+.alert{padding:11px 14px;border-radius:4px;font-family:'DM Mono',monospace;font-size:11px;margin-bottom:14px;display:none;align-items:center;gap:8px;}
+.alert.error{background:rgba(192,57,43,0.15);border:1px solid rgba(192,57,43,0.3);color:#ef9a9a;display:flex;}
+.alert.success{background:rgba(45,106,79,0.15);border:1px solid rgba(45,106,79,0.3);color:var(--sage-light);display:flex;}
+
+/* EMPTY STATE */
+.empty-state{text-align:center;padding:52px 20px;}
+.empty-icon{font-size:30px;margin-bottom:10px;opacity:0.3;}
+.empty-text{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--slate-600);}
+
+/* CODE REVEALED BOX */
+.code-reveal{background:rgba(212,168,83,0.06);border:1px solid rgba(212,168,83,0.25);border-radius:6px;padding:20px;text-align:center;margin:16px 0;}
+.code-reveal-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:var(--gold-400);margin-bottom:10px;}
+.code-reveal-value{font-family:'DM Mono',monospace;font-size:22px;color:var(--gold-200);letter-spacing:0.12em;margin-bottom:10px;word-break:break-all;}
+.code-reveal-copy{font-family:'DM Mono',monospace;font-size:10px;color:var(--slate-500);}
+
+/* TOAST */
+.toast{position:fixed;bottom:32px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--slate-800);border:1px solid rgba(212,168,83,0.2);color:var(--slate-200);padding:12px 22px;border-radius:4px;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.06em;opacity:0;transition:opacity 0.3s,transform 0.3s;pointer-events:none;z-index:9999;white-space:nowrap;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+/* SECTION TABS */
+.section-tabs{display:flex;gap:0;border-bottom:1px solid rgba(212,168,83,0.08);margin-bottom:24px;}
+.section-tab{padding:12px 22px;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--slate-500);cursor:pointer;border-bottom:2px solid transparent;transition:all 0.2s;}
+.section-tab:hover{color:var(--slate-300);}
+.section-tab.active{color:var(--gold-300);border-bottom-color:var(--gold-400);}
+.section-content{display:none;}
+.section-content.active{display:block;}
+</style>
+</head>
+<body>
+
+<!-- ── LOGIN SCREEN ── -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="login-shield">🛡</div>
+      <span class="login-brand">AfterGuard</span>
+    </div>
+    <div class="login-title">Admin <em style="font-style:italic;color:var(--gold-300)">Portal</em></div>
+    <div class="login-sub">Restricted Access · Authorized Personnel Only</div>
+    <div class="login-err" id="login-err">⚠ Invalid credentials or unauthorized account.</div>
+    <div class="login-field">
+      <label class="login-label">Email Address</label>
+      <input class="login-input" type="email" id="admin-email" placeholder="afterguardsecure@gmail.com" autocomplete="email">
+    </div>
+    <div class="login-field">
+      <label class="login-label">Password</label>
+      <input class="login-input" type="password" id="admin-password" placeholder="••••••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')adminLogin()">
+    </div>
+    <button class="login-btn" onclick="adminLogin()">Access Admin Portal</button>
+    <a href="afterguard-auth.html" class="back-to-auth">← Back to AfterGuard Sign In</a>
+  </div>
+</div>
+
+<!-- ── ADMIN PORTAL ── -->
+<div id="admin-screen">
+  <div class="admin-layout">
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+      <div class="sidebar-logo">
+        <div class="sidebar-logo-mark">
+          <div class="sidebar-logo-shield">🛡</div>
+          <span class="sidebar-logo-name">AfterGuard</span>
+        </div>
+        <div class="sidebar-logo-tag">Admin Console</div>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-label">Dashboard</div>
+        <div class="nav-item active" onclick="showSection('overview')"><span class="nav-icon">📊</span>Overview</div>
+        <div class="nav-label">Funeral Homes</div>
+        <div class="nav-item" onclick="showSection('funeral-homes')"><span class="nav-icon">🏛️</span>Funeral Homes</div>
+        <div class="nav-item" onclick="showSection('enterprise-codes')"><span class="nav-icon">🔑</span>Enterprise Codes</div>
+        <div class="nav-label">Access Codes</div>
+        <div class="nav-item" onclick="showSection('family-codes')"><span class="nav-icon">👨‍👩‍👧</span>Family Codes</div>
+        <div class="nav-item" onclick="showSection('attorney-codes')"><span class="nav-icon">⚖️</span>Attorney Codes</div>
+        <div class="nav-label">Users</div>
+        <div class="nav-item" onclick="showSection('users')"><span class="nav-icon">👥</span>All Users</div>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="admin-badge">
+          <div class="admin-avatar">IS</div>
+          <div class="admin-info">
+            <div class="admin-name-label">Ishaan Samantray</div>
+            <div class="admin-role-label">Super Admin</div>
+          </div>
+        </div>
+        <button class="signout-btn" onclick="adminSignOut()">→ Sign Out</button>
+      </div>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div class="admin-main">
+      <div class="topbar">
+        <div>
+          <div class="page-eyebrow" id="topbar-eyebrow">Admin Console · Overview</div>
+          <div class="page-title" id="topbar-title">Dashboard</div>
+        </div>
+        <div style="display:flex;gap:10px;">
+          <button class="btn btn-ghost" onclick="refreshAll()">↻ Refresh</button>
+          <button class="btn btn-gold" onclick="openAddFuneralHome()">+ Add Funeral Home</button>
+        </div>
+      </div>
+
+      <div class="content">
+
+        <!-- ── OVERVIEW ── -->
+        <div class="section-content active" id="sec-overview">
+          <div class="stat-grid">
+            <div class="stat-card" style="--accent:#ef9a9a">
+              <div class="stat-val" id="s-fh">—</div>
+              <div class="stat-lbl">Funeral Homes</div>
+            </div>
+            <div class="stat-card" style="--accent:var(--gold-400)">
+              <div class="stat-val" id="s-ecodes">—</div>
+              <div class="stat-lbl">Enterprise Codes</div>
+            </div>
+            <div class="stat-card" style="--accent:var(--sage)">
+              <div class="stat-val" id="s-acodes">—</div>
+              <div class="stat-lbl">Access Codes Issued</div>
+            </div>
+            <div class="stat-card" style="--accent:#93c5fd">
+              <div class="stat-val" id="s-users">—</div>
+              <div class="stat-lbl">Total Users</div>
+            </div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+            <div class="panel">
+              <div class="panel-header">
+                <div><div class="panel-eyebrow">Recent</div><div class="panel-title">Latest Registrations</div></div>
+              </div>
+              <div id="recent-users-wrap">
+                <div class="empty-state"><div class="empty-icon">⏳</div><div class="empty-text">Loading…</div></div>
+              </div>
+            </div>
+            <div class="panel">
+              <div class="panel-header">
+                <div><div class="panel-eyebrow">Recent</div><div class="panel-title">Recently Used Codes</div></div>
+              </div>
+              <div id="recent-codes-wrap">
+                <div class="empty-state"><div class="empty-icon">⏳</div><div class="empty-text">Loading…</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── FUNERAL HOMES ── -->
+        <div class="section-content" id="sec-funeral-homes">
+          <div class="panel">
+            <div class="panel-header">
+              <div><div class="panel-eyebrow">Partners</div><div class="panel-title">Registered Funeral Homes</div></div>
+              <button class="btn btn-gold" onclick="openAddFuneralHome()">+ Add Funeral Home</button>
+            </div>
+            <div id="fh-table-wrap">
+              <div class="empty-state"><div class="empty-icon">⏳</div><div class="empty-text">Loading…</div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── ENTERPRISE CODES ── -->
+        <div class="section-content" id="sec-enterprise-codes">
+          <div class="panel">
+            <div class="panel-header">
+              <div><div class="panel-eyebrow">Funeral Home Access</div><div class="panel-title">Enterprise Codes</div></div>
+              <button class="btn btn-gold" onclick="openGenerateCode('funeral_home')">+ Generate Code</button>
+            </div>
+            <div id="ec-table-wrap">
+              <div class="empty-state"><div class="empty-icon">⏳</div><div class="empty-text">Loading…</div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── FAMILY CODES ── -->
+        <div class="section-content" id="sec-family-codes">
+          <div class="panel">
+            <div class="panel-header">
+              <div><div class="panel-eyebrow">Family Access</div><div class="panel-title">Family Portal Codes</div></div>
+              <button class="btn btn-gold" onclick="openGenerateCode('family')">+ Generate Code</button>
+            </div>
+            <div id="fc-table-wrap">
+              <div class="empty-state"><div class="empty-icon">⏳</div><div class="empty-text">Loading…</div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── ATTORNEY CODES ── -->
+        <div class="section-content" id="sec-attorney-codes">
+          <div class="panel">
+            <div class="panel-header">
+              <div><div class="panel-eyebrow">Legal Access</div><div class="panel-title">Attorney / Legal Codes</div></div>
+              <button class="btn btn-gold" onclick="openGenerateCode('attorney')">+ Generate Code</button>
+            </div>
+            <div id="ac-table-wrap">
+              <div class="empty-state"><div class="empty-icon">⏳</div><div class="empty-text">Loading…</div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── USERS ── -->
+        <div class="section-content" id="sec-users">
+          <div class="panel">
+            <div class="panel-header">
+              <div><div class="panel-eyebrow">Platform</div><div class="panel-title">All Registered Users</div></div>
+            </div>
+            <div id="users-table-wrap">
+              <div class="empty-state"><div class="empty-icon">⏳</div><div class="empty-text">Loading…</div></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── ADD FUNERAL HOME MODAL ── -->
+<div class="modal-overlay" id="modal-fh">
+  <div class="modal">
+    <div class="modal-header">
+      <div><div class="modal-eyebrow">Partner Management</div><div class="modal-title">Add Funeral Home</div></div>
+      <button class="modal-close" onclick="closeModal('modal-fh')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="alert" id="fh-err">⚠ <span id="fh-err-msg"></span></div>
+      <div class="grid-2">
+        <div class="field-group"><label class="field-label">Funeral Home Name *</label><input class="field-input" id="fh-name" placeholder="Henderson Funeral Services"></div>
+        <div class="field-group"><label class="field-label">Contact Name *</label><input class="field-input" id="fh-contact" placeholder="James Henderson"></div>
+      </div>
+      <div class="field-group"><label class="field-label">Email Address *</label><input class="field-input" id="fh-email" type="email" placeholder="james@hendersonfh.com"></div>
+      <div class="grid-2">
+        <div class="field-group"><label class="field-label">Phone</label><input class="field-input" id="fh-phone" placeholder="+1 (555) 000-0000"></div>
+        <div class="field-group"><label class="field-label">State</label><input class="field-input" id="fh-state" placeholder="New York"></div>
+      </div>
+      <div class="field-group"><label class="field-label">Address</label><input class="field-input" id="fh-address" placeholder="123 Main St, City, State"></div>
+      <div class="field-group"><label class="field-label">Plan</label>
+        <select class="field-input" id="fh-plan">
+          <option value="pilot">Pilot (Free)</option>
+          <option value="basic">Basic</option>
+          <option value="enterprise">Enterprise</option>
+        </select>
+      </div>
+      <div class="field-group"><label class="field-label">Notes</label><input class="field-input" id="fh-notes" placeholder="How they found us, outreach notes…"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-fh')">Cancel</button>
+      <button class="btn btn-gold" onclick="addFuneralHome()">Add & Generate Code</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── GENERATE CODE MODAL ── -->
+<div class="modal-overlay" id="modal-code">
+  <div class="modal">
+    <div class="modal-header">
+      <div><div class="modal-eyebrow" id="code-modal-eyebrow">Generate Code</div><div class="modal-title" id="code-modal-title">New Access Code</div></div>
+      <button class="modal-close" onclick="closeModal('modal-code')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="alert" id="code-err">⚠ <span id="code-err-msg"></span></div>
+      <div class="field-group"><label class="field-label">Assigned To (Funeral Home / Person)</label><input class="field-input" id="code-assigned" placeholder="Henderson Funeral Services"></div>
+      <div class="field-group"><label class="field-label">Notes (optional)</label><input class="field-input" id="code-notes" placeholder="Sent via email on Feb 26 2026"></div>
+      <div id="code-result" style="display:none;">
+        <div class="code-reveal">
+          <div class="code-reveal-label">🔑 Generated Access Code</div>
+          <div class="code-reveal-value" id="generated-code-val">—</div>
+          <div class="code-reveal-copy">Click the code above to copy to clipboard</div>
+        </div>
+        <p style="font-size:13px;color:var(--slate-500);line-height:1.6;font-family:'DM Mono',monospace;font-size:11px;">Share this code with the recipient. It can only be used once to create one account.</p>
+      </div>
+    </div>
+    <div class="modal-footer" id="code-modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-code')">Cancel</button>
+      <button class="btn btn-gold" id="gen-btn" onclick="generateCode()">Generate Code</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SB_URL = 'https://bzscltliqeijqskcdajp.supabase.co';
+const SB_KEY = 'sb_publishable_LFfDCNnaH2PDo0auIBn9oA_td5dL5bD';
+const ADMIN_EMAIL = 'afterguardsecure@gmail.com';
+
+const { createClient } = supabase;
+const sb = createClient(SB_URL, SB_KEY);
+
+let currentCodeType = 'funeral_home';
+let currentSection  = 'overview';
+
+// ── ADMIN LOGIN ────────────────────────────────────────────────────────
+async function adminLogin() {
+  const email = document.getElementById('admin-email').value.trim();
+  const pwd   = document.getElementById('admin-password').value;
+  const err   = document.getElementById('login-err');
+  err.classList.remove('show');
+
+  if (email.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
+    err.classList.add('show'); return;
+  }
+
+  const { data, error } = await sb.auth.signInWithPassword({ email, password: pwd });
+  if (error || !data.session) { err.classList.add('show'); return; }
+
+  showAdminPortal();
+}
+
+function showAdminPortal() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('admin-screen').style.display = 'block';
+  loadAll();
+}
+
+async function adminSignOut() {
+  await sb.auth.signOut();
+  window.location.reload();
+}
+
+// ── AUTO-LOGIN CHECK ───────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', async () => {
+  const { data: { session } } = await sb.auth.getSession();
+  if (session && session.user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
+    showAdminPortal();
+  }
+});
+
+// ── SECTION NAVIGATION ─────────────────────────────────────────────────
+const sectionMeta = {
+  'overview':         { eye:'Admin Console · Overview',         title:'Dashboard' },
+  'funeral-homes':    { eye:'Partner Management',               title:'Funeral Homes' },
+  'enterprise-codes': { eye:'Access Control · Funeral Home',    title:'Enterprise Codes' },
+  'family-codes':     { eye:'Access Control · Family',          title:'Family Portal Codes' },
+  'attorney-codes':   { eye:'Access Control · Legal',           title:'Attorney Codes' },
+  'users':            { eye:'Platform',                         title:'All Users' },
+};
+function showSection(id) {
+  document.querySelectorAll('.section-content').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('sec-' + id).classList.add('active');
+  event.currentTarget.classList.add('active');
+  currentSection = id;
+  const m = sectionMeta[id] || {};
+  document.getElementById('topbar-eyebrow').textContent = m.eye || '';
+  document.getElementById('topbar-title').textContent   = m.title || '';
+  loadSection(id);
+}
+
+// ── LOAD ALL ───────────────────────────────────────────────────────────
+async function loadAll() {
+  loadStats();
+  loadSection('overview');
+}
+
+function refreshAll() {
+  loadStats();
+  loadSection(currentSection);
+  toast('↻ Refreshed');
+}
+
+async function loadStats() {
+  const [fhRes, codeRes, userRes] = await Promise.all([
+    sb.from('funeral_homes').select('id', { count:'exact', head:true }),
+    sb.from('access_codes').select('id', { count:'exact', head:true }),
+    sb.from('user_profiles').select('id', { count:'exact', head:true }),
+  ]);
+  document.getElementById('s-fh').textContent    = fhRes.count ?? '—';
+  document.getElementById('s-ecodes').textContent = '—';
+  document.getElementById('s-acodes').textContent = codeRes.count ?? '—';
+  document.getElementById('s-users').textContent  = userRes.count ?? '—';
+
+  const ecRes = await sb.from('access_codes').select('id',{count:'exact',head:true}).eq('account_type','funeral_home');
+  document.getElementById('s-ecodes').textContent = ecRes.count ?? '—';
+}
+
+function loadSection(id) {
+  if (id === 'overview')         loadOverview();
+  if (id === 'funeral-homes')    loadFuneralHomes();
+  if (id === 'enterprise-codes') loadCodes('funeral_home', 'ec-table-wrap');
+  if (id === 'family-codes')     loadCodes('family', 'fc-table-wrap');
+  if (id === 'attorney-codes')   loadCodes('attorney', 'ac-table-wrap');
+  if (id === 'users')            loadUsers();
+}
+
+// ── OVERVIEW ───────────────────────────────────────────────────────────
+async function loadOverview() {
+  // Recent users
+  const { data: users } = await sb.from('user_profiles').select('*').order('created_at',{ascending:false}).limit(6);
+  const ruw = document.getElementById('recent-users-wrap');
+  if (!users || users.length === 0) {
+    ruw.innerHTML = `<div class="empty-state"><div class="empty-icon">👥</div><div class="empty-text">No users yet</div></div>`;
+  } else {
+    ruw.innerHTML = `<table class="tbl">
+      <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Joined</th></tr></thead>
+      <tbody>${users.map(u => `
+        <tr>
+          <td style="color:var(--slate-200)">${esc(u.full_name||'—')}</td>
+          <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--slate-500)">${esc(u.email||'')}</td>
+          <td>${roleTag(u.account_type)}</td>
+          <td style="font-family:'DM Mono',monospace;font-size:10px;color:var(--slate-600)">${fmtDate(u.created_at)}</td>
+        </tr>`).join('')}</tbody>
+    </table>`;
+  }
+
+  // Recent used codes
+  const { data: codes } = await sb.from('access_codes').select('*').eq('used',true).order('updated_at',{ascending:false}).limit(6);
+  const rcw = document.getElementById('recent-codes-wrap');
+  if (!codes || codes.length === 0) {
+    rcw.innerHTML = `<div class="empty-state"><div class="empty-icon">🔑</div><div class="empty-text">No used codes yet</div></div>`;
+  } else {
+    rcw.innerHTML = `<table class="tbl">
+      <thead><tr><th>Code</th><th>Type</th><th>Used By</th></tr></thead>
+      <tbody>${codes.map(c => `
+        <tr>
+          <td><span class="code-badge">${esc(c.code)}</span></td>
+          <td>${roleTag(c.account_type)}</td>
+          <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--slate-500)">${esc(c.used_by_email||'—')}</td>
+        </tr>`).join('')}</tbody>
+    </table>`;
+  }
+}
+
+// ── FUNERAL HOMES ──────────────────────────────────────────────────────
+async function loadFuneralHomes() {
+  const { data, error } = await sb.from('funeral_homes').select('*').order('created_at',{ascending:false});
+  const wrap = document.getElementById('fh-table-wrap');
+  if (!data || data.length === 0) {
+    wrap.innerHTML = `<div class="empty-state"><div class="empty-icon">🏛️</div><div class="empty-text">No funeral homes yet — add your first one</div></div>`;
+    return;
+  }
+  const planTag = p => p === 'pilot'      ? '<span class="tag tag-yellow">Pilot</span>'
+                      : p === 'basic'     ? '<span class="tag tag-blue">Basic</span>'
+                      : p === 'enterprise'? '<span class="tag tag-gold">Enterprise</span>'
+                      :                    '<span class="tag">Unknown</span>';
+  wrap.innerHTML = `<table class="tbl">
+    <thead><tr><th>Funeral Home</th><th>Contact</th><th>Email</th><th>State</th><th>Plan</th><th>Enterprise Code</th><th>Joined</th><th></th></tr></thead>
+    <tbody>${data.map(fh => `
+      <tr>
+        <td style="color:var(--slate-200);font-size:14px;">${esc(fh.name)}</td>
+        <td>${esc(fh.contact_name||'—')}</td>
+        <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--slate-500)">${esc(fh.email||'')}</td>
+        <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--slate-500)">${esc(fh.state||'—')}</td>
+        <td>${planTag(fh.plan)}</td>
+        <td>${fh.enterprise_code ? `<span class="code-badge" onclick="copyCode('${fh.enterprise_code}')">${fh.enterprise_code}</span>` : '<span style="color:var(--slate-700);font-size:12px;">—</span>'}</td>
+        <td style="font-family:'DM Mono',monospace;font-size:10px;color:var(--slate-600)">${fmtDate(fh.created_at)}</td>
+        <td>
+          <button class="btn btn-ghost btn-sm" onclick="generateCodeForFH('${fh.id}','${esc(fh.name)}')">New Code</button>
+          <button class="btn btn-danger btn-sm" style="margin-left:4px;" onclick="deleteFH('${fh.id}','${esc(fh.name)}')">✕</button>
+        </td>
+      </tr>`).join('')}</tbody>
+  </table>`;
+}
+
+// ── CODES TABLE ────────────────────────────────────────────────────────
+async function loadCodes(type, wrapId) {
+  const { data } = await sb.from('access_codes').select('*').eq('account_type',type).order('created_at',{ascending:false});
+  const wrap = document.getElementById(wrapId);
+  if (!data || data.length === 0) {
+    wrap.innerHTML = `<div class="empty-state"><div class="empty-icon">🔑</div><div class="empty-text">No ${type} codes yet</div></div>`;
+    return;
+  }
+  wrap.innerHTML = `<table class="tbl">
+    <thead><tr><th>Code</th><th>Assigned To</th><th>Status</th><th>Used By</th><th>Created</th><th></th></tr></thead>
+    <tbody>${data.map(c => `
+      <tr>
+        <td><span class="code-badge" onclick="copyCode('${c.code}')">${esc(c.code)}</span></td>
+        <td style="font-size:13px;">${esc(c.assigned_to||'—')}</td>
+        <td>${c.used ? '<span class="tag tag-red">Used</span>' : '<span class="tag tag-green">Active</span>'}</td>
+        <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--slate-500)">${esc(c.used_by_email||'—')}</td>
+        <td style="font-family:'DM Mono',monospace;font-size:10px;color:var(--slate-600)">${fmtDate(c.created_at)}</td>
+        <td>
+          ${!c.used ? `<button class="btn btn-danger btn-sm" onclick="revokeCode('${c.id}')">Revoke</button>` : ''}
+        </td>
+      </tr>`).join('')}</tbody>
+  </table>`;
+}
+
+// ── USERS ──────────────────────────────────────────────────────────────
+async function loadUsers() {
+  const { data } = await sb.from('user_profiles').select('*').order('created_at',{ascending:false});
+  const wrap = document.getElementById('users-table-wrap');
+  if (!data || data.length === 0) {
+    wrap.innerHTML = `<div class="empty-state"><div class="empty-icon">👥</div><div class="empty-text">No users yet</div></div>`;
+    return;
+  }
+  wrap.innerHTML = `<table class="tbl">
+    <thead><tr><th>Name</th><th>Email</th><th>Account Type</th><th>Organization</th><th>Joined</th></tr></thead>
+    <tbody>${data.map(u => `
+      <tr>
+        <td style="color:var(--slate-200)">${esc(u.full_name||'—')}</td>
+        <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--slate-500)">${esc(u.email||'')}</td>
+        <td>${roleTag(u.account_type)}</td>
+        <td style="font-size:13px;color:var(--slate-400)">${esc(u.organization||'—')}</td>
+        <td style="font-family:'DM Mono',monospace;font-size:10px;color:var(--slate-600)">${fmtDate(u.created_at)}</td>
+      </tr>`).join('')}</tbody>
+  </table>`;
+}
+
+// ── ADD FUNERAL HOME ───────────────────────────────────────────────────
+function openAddFuneralHome() { document.getElementById('modal-fh').classList.add('open'); }
+
+async function addFuneralHome() {
+  const name    = document.getElementById('fh-name').value.trim();
+  const contact = document.getElementById('fh-contact').value.trim();
+  const email   = document.getElementById('fh-email').value.trim();
+  const phone   = document.getElementById('fh-phone').value.trim();
+  const state   = document.getElementById('fh-state').value.trim();
+  const address = document.getElementById('fh-address').value.trim();
+  const plan    = document.getElementById('fh-plan').value;
+  const notes   = document.getElementById('fh-notes').value.trim();
+  const errEl   = document.getElementById('fh-err');
+  hideAlert('fh-err');
+
+  if (!name || !contact || !email) {
+    document.getElementById('fh-err-msg').textContent = 'Name, contact, and email are required.';
+    errEl.classList.add('error'); return;
+  }
+
+  // Generate enterprise code
+  const code = 'AG-ENT-' + Math.random().toString(36).substr(2,6).toUpperCase();
+
+  const { data: fhData, error: fhErr } = await sb.from('funeral_homes').insert({
+    name, contact_name:contact, email, phone:phone||null,
+    state:state||null, address:address||null, plan, notes:notes||null,
+    enterprise_code: code
+  }).select().single();
+
+  if (fhErr) { document.getElementById('fh-err-msg').textContent = fhErr.message; errEl.classList.add('error'); return; }
+
+  // Also create an enterprise access code row
+  await sb.from('access_codes').insert({
+    code,
+    account_type: 'funeral_home',
+    assigned_to: name,
+    notes: `Auto-generated for ${name}`,
+    funeral_home_id: fhData.id
+  });
+
+  closeModal('modal-fh');
+  toast(`✓ ${name} added · Code: ${code}`);
+  loadFuneralHomes();
+  loadStats();
+
+  // Clear fields
+  ['fh-name','fh-contact','fh-email','fh-phone','fh-state','fh-address','fh-notes'].forEach(id => document.getElementById(id).value='');
+}
+
+// ── GENERATE CODE FOR EXISTING FH ─────────────────────────────────────
+async function generateCodeForFH(fhId, fhName) {
+  const code = 'AG-ENT-' + Math.random().toString(36).substr(2,6).toUpperCase();
+  await sb.from('access_codes').insert({ code, account_type:'funeral_home', assigned_to:fhName, funeral_home_id:fhId });
+  await sb.from('funeral_homes').update({ enterprise_code:code }).eq('id',fhId);
+  copyCode(code);
+  toast(`✓ New code generated for ${fhName}: ${code}`);
+  loadFuneralHomes();
+  loadCodes('funeral_home','ec-table-wrap');
+}
+
+// ── DELETE FH ──────────────────────────────────────────────────────────
+async function deleteFH(id, name) {
+  if (!confirm(`Remove "${name}" from AfterGuard? This will not affect their users.`)) return;
+  await sb.from('funeral_homes').delete().eq('id',id);
+  toast(`✓ ${name} removed`);
+  loadFuneralHomes();
+  loadStats();
+}
+
+// ── GENERATE CODE MODAL ────────────────────────────────────────────────
+function openGenerateCode(type) {
+  currentCodeType = type;
+  const titles = { funeral_home:'Enterprise Code', family:'Family Access Code', attorney:'Attorney Code' };
+  const eyes   = { funeral_home:'Funeral Home Enterprise Access', family:'Family Portal Access', attorney:'Legal / Attorney Access' };
+  document.getElementById('code-modal-eyebrow').textContent = eyes[type] || 'Generate Code';
+  document.getElementById('code-modal-title').textContent   = titles[type] || 'New Code';
+  document.getElementById('code-result').style.display      = 'none';
+  document.getElementById('code-modal-footer').style.display = 'flex';
+  document.getElementById('gen-btn').style.display = 'inline-flex';
+  hideAlert('code-err');
+  document.getElementById('code-assigned').value = '';
+  document.getElementById('code-notes').value    = '';
+  document.getElementById('modal-code').classList.add('open');
+}
+
+async function generateCode() {
+  const assignedTo = document.getElementById('code-assigned').value.trim();
+  const notes      = document.getElementById('code-notes').value.trim();
+  hideAlert('code-err');
+
+  const prefix = { funeral_home:'AG-ENT', family:'AG-FAM', attorney:'AG-LGL' }[currentCodeType] || 'AG';
+  const code = prefix + '-' + Math.random().toString(36).substr(2,7).toUpperCase();
+
+  const { error } = await sb.from('access_codes').insert({
+    code,
+    account_type: currentCodeType,
+    assigned_to: assignedTo || null,
+    notes: notes || null
+  });
+
+  if (error) {
+    document.getElementById('code-err-msg').textContent = error.message;
+    document.getElementById('code-err').classList.add('error'); return;
+  }
+
+  document.getElementById('generated-code-val').textContent = code;
+  document.getElementById('generated-code-val').onclick = () => copyCode(code);
+  document.getElementById('code-result').style.display = 'block';
+  document.getElementById('gen-btn').style.display = 'none';
+
+  toast('✓ Code generated — click it to copy');
+  loadCodes(currentCodeType, { funeral_home:'ec-table-wrap', family:'fc-table-wrap', attorney:'ac-table-wrap' }[currentCodeType]);
+  loadStats();
+}
+
+// ── REVOKE CODE ────────────────────────────────────────────────────────
+async function revokeCode(id) {
+  if (!confirm('Revoke this code? It will no longer work for sign-up.')) return;
+  await sb.from('access_codes').delete().eq('id',id);
+  toast('✓ Code revoked');
+  loadSection(currentSection);
+}
+
+// ── HELPERS ────────────────────────────────────────────────────────────
+function copyCode(code) {
+  navigator.clipboard.writeText(code).then(() => toast(`✓ Copied: ${code}`));
+}
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(m => m.addEventListener('click', e => { if(e.target===m) m.classList.remove('open'); }));
+function hideAlert(id) { const el=document.getElementById(id); if(el){el.style.display='';el.classList.remove('error','success');} }
+function fmtDate(d) { if(!d)return'—'; return new Date(d).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}); }
+function esc(s) { return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/'/g,'&#39;'); }
+function roleTag(r) {
+  const m = { family:'<span class="tag tag-green">Family</span>', funeral_home:'<span class="tag tag-gold">Funeral Home</span>', attorney:'<span class="tag tag-blue">Attorney</span>', admin:'<span class="tag tag-red">Admin</span>' };
+  return m[r] || `<span class="tag">${esc(r||'—')}</span>`;
+}
+function toast(msg) {
+  const t=document.getElementById('toast'); t.textContent=msg;
+  t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),3000);
+}
+</script>
+</body>
+</html>
