@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AfterGuard — Family Portals</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+(async () => {
+  const { createClient } = supabase;
+  const sb = createClient('https://bzscltliqeijqskcdajp.supabase.co','sb_publishable_LFfDCNnaH2PDo0auIBn9oA_td5dL5bD');
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) { window.location.replace('afterguard-auth.html'); return; }
+  window._sb = sb; window._user = session.user;
+  document.addEventListener('DOMContentLoaded', () => {
+    const m = session.user.user_metadata || {};
+    const fn = m.first_name||''; const ln = m.last_name||'';
+    const full = (fn+' '+ln).trim() || session.user.email;
+    const ini  = ((fn[0]||'')+(ln[0]||'')).toUpperCase() || session.user.email[0].toUpperCase();
+    const roleMap = {funeral_home:'Funeral Home',family:'Family Member',attorney:'Attorney',admin:'Administrator'};
+    const role = roleMap[m.account_type] || (m.account_type ? m.account_type.charAt(0).toUpperCase()+m.account_type.slice(1) : 'Member');
+    document.querySelectorAll('.user-name').forEach(e=>e.textContent=full);
+    document.querySelectorAll('.user-role').forEach(e=>e.textContent=role);
+    document.querySelectorAll('.user-avatar').forEach(e=>e.textContent=ini);
+    initPage();
+  });
+})();
+async function handleSignOut(){if(window._sb)await window._sb.auth.signOut();window.location.replace('afterguard-auth.html');}
+</script>
+<style>
+:root{--slate-950:#0a0c0f;--slate-900:#0f1318;--slate-800:#171d26;--slate-700:#1f2937;--slate-600:#374151;--slate-400:#9ca3af;--slate-300:#d1d5db;--slate-200:#e5e7eb;--gold-400:#d4a853;--gold-300:#e2bb72;--gold-200:#f0d4a0;--gold-500:#b8922e;--sage:#7a9e8e;--sage-light:#a3c4b5;}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--slate-950);color:var(--slate-300);font-family:'Cormorant Garamond',Georgia,serif;min-height:100vh;overflow-x:hidden;}
+.sidebar{position:fixed;left:0;top:0;bottom:0;width:240px;background:var(--slate-900);border-right:1px solid rgba(212,168,83,0.12);display:flex;flex-direction:column;z-index:100;}
+.logo{padding:28px 24px 24px;border-bottom:1px solid rgba(212,168,83,0.1);}
+.logo-mark{display:flex;align-items:center;gap:12px;margin-bottom:6px;}
+.logo-shield{width:32px;height:32px;background:rgba(212,168,83,0.1);border:1px solid rgba(212,168,83,0.25);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;}
+.logo-name{font-size:16px;font-weight:300;letter-spacing:0.12em;color:var(--gold-300);font-family:'Cormorant Garamond',serif;}
+.logo-tagline{font-size:10px;letter-spacing:0.2em;color:var(--slate-400);font-family:'DM Mono',monospace;text-transform:uppercase;margin-left:44px;}
+.nav{flex:1;padding:20px 0;overflow-y:auto;}
+.nav-section-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.25em;text-transform:uppercase;color:var(--slate-600);padding:0 24px;margin-bottom:8px;}
+.nav-item{display:flex;align-items:center;gap:12px;padding:10px 24px;transition:all 0.2s;font-size:15px;color:var(--slate-400);border-left:2px solid transparent;text-decoration:none;}
+.nav-item:hover{color:var(--slate-200);background:rgba(212,168,83,0.04);}
+.nav-item.active{color:var(--gold-300);border-left-color:var(--gold-400);background:rgba(212,168,83,0.06);}
+.nav-icon{font-size:15px;width:18px;text-align:center;flex-shrink:0;opacity:0.7;}
+.nav-item.active .nav-icon{opacity:1;}
+.badge{margin-left:auto;font-family:'DM Mono',monospace;font-size:10px;padding:2px 7px;border-radius:99px;background:rgba(192,57,43,0.2);color:#e57373;border:1px solid rgba(192,57,43,0.3);}
+.sidebar-footer{padding:16px 24px;border-top:1px solid rgba(212,168,83,0.08);}
+.user-card{display:flex;align-items:center;gap:10px;}
+.user-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--gold-500),var(--sage));display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--slate-900);font-weight:600;flex-shrink:0;}
+.user-info{flex:1;min-width:0;}
+.user-name{font-size:14px;color:var(--slate-200);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.user-role{font-size:10px;font-family:'DM Mono',monospace;color:var(--gold-400);letter-spacing:0.1em;text-transform:uppercase;margin-top:2px;}
+.signout-btn{margin-top:10px;width:100%;background:transparent;border:1px solid rgba(212,168,83,0.12);border-radius:3px;color:var(--slate-400);font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;padding:7px;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:6px;}
+.signout-btn:hover{border-color:rgba(212,168,83,0.3);color:var(--gold-300);}
+.main{margin-left:240px;min-height:100vh;display:flex;flex-direction:column;}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:20px 36px;border-bottom:1px solid rgba(212,168,83,0.08);background:var(--slate-950);position:sticky;top:0;z-index:50;backdrop-filter:blur(12px);}
+.page-eyebrow{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:var(--gold-400);margin-bottom:2px;}
+.page-title{font-size:26px;font-weight:300;color:var(--slate-200);font-family:'Cormorant Garamond',serif;}
+.topbar-right{display:flex;align-items:center;gap:10px;}
+.live-dot{width:7px;height:7px;border-radius:50%;background:var(--sage-light);box-shadow:0 0 5px var(--sage-light);}
+.content{padding:32px 36px;flex:1;}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px;}
+.stat-card{background:var(--slate-900);border:1px solid rgba(212,168,83,0.1);border-radius:6px;padding:20px 22px;}
+.stat-val{font-family:'Cormorant Garamond',serif;font-size:2.4rem;font-weight:300;color:var(--slate-200);line-height:1;margin-bottom:4px;}
+.stat-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:var(--slate-600);}
+.stat-sub{font-family:'DM Mono',monospace;font-size:10px;margin-top:6px;color:var(--sage-light);}
+.panel{background:var(--slate-900);border:1px solid rgba(212,168,83,0.1);border-radius:6px;margin-bottom:20px;overflow:hidden;}
+.panel-header{display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid rgba(212,168,83,0.08);}
+.panel-title{font-size:16px;font-weight:400;color:var(--slate-200);}
+.panel-eyebrow{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--gold-400);margin-bottom:3px;}
+.panel-body{padding:22px;}
+.tbl{width:100%;border-collapse:collapse;}
+.tbl th{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--slate-600);padding:10px 16px;text-align:left;border-bottom:1px solid rgba(212,168,83,0.08);}
+.tbl td{padding:13px 16px;font-size:14px;border-bottom:1px solid rgba(255,255,255,0.03);vertical-align:middle;}
+.tbl tr:last-child td{border-bottom:none;}
+.tbl tr:hover td{background:rgba(212,168,83,0.02);}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:4px;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.08em;cursor:pointer;transition:all 0.2s;border:none;text-decoration:none;white-space:nowrap;}
+.btn:disabled{opacity:0.5;cursor:not-allowed;}
+.btn-ghost{background:transparent;color:var(--slate-400);border:1px solid var(--slate-700);}
+.btn-ghost:hover{color:var(--slate-200);border-color:var(--slate-500);}
+.btn-solid{background:var(--gold-500);border:1px solid var(--gold-400);color:var(--slate-950);font-weight:500;}
+.btn-solid:hover{background:var(--gold-400);}
+.btn-danger{background:rgba(192,57,43,0.12);border:1px solid rgba(192,57,43,0.28);color:#ef9a9a;}
+.btn-danger:hover{background:rgba(192,57,43,0.22);}
+.tag{display:inline-flex;align-items:center;font-family:'DM Mono',monospace;font-size:10px;padding:3px 9px;border-radius:99px;}
+.tag-green{background:rgba(45,106,79,0.15);color:var(--sage-light);border:1px solid rgba(45,106,79,0.25);}
+.tag-yellow{background:rgba(217,119,6,0.15);color:#fbbf24;border:1px solid rgba(217,119,6,0.25);}
+.tag-blue{background:rgba(59,130,246,0.12);color:#93c5fd;border:1px solid rgba(59,130,246,0.2);}
+.tag-gold{background:rgba(212,168,83,0.1);color:var(--gold-300);border:1px solid rgba(212,168,83,0.2);}
+.member-avatar{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--gold-500),var(--sage));display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--slate-900);font-weight:600;flex-shrink:0;font-family:'DM Mono',monospace;}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+.field-group{margin-bottom:14px;}
+.field-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:var(--slate-400);margin-bottom:7px;display:block;}
+.field-input{width:100%;padding:10px 14px;background:var(--slate-800);border:1px solid rgba(212,168,83,0.1);border-radius:3px;color:var(--slate-200);font-family:'DM Mono',monospace;font-size:12px;outline:none;transition:border-color 0.2s;}
+.field-input:focus{border-color:rgba(212,168,83,0.4);}
+.field-input::placeholder{color:var(--slate-600);}
+select.field-input option{background:var(--slate-800);}
+.alert{padding:11px 14px;border-radius:4px;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.05em;margin-bottom:14px;display:none;align-items:center;gap:8px;}
+.alert.error{background:rgba(192,57,43,0.15);border:1px solid rgba(192,57,43,0.3);color:#ef9a9a;display:flex;}
+.alert.success{background:rgba(45,106,79,0.15);border:1px solid rgba(45,106,79,0.3);color:var(--sage-light);display:flex;}
+.empty-state{text-align:center;padding:52px 20px;}
+.empty-icon{font-size:32px;margin-bottom:12px;opacity:0.35;}
+.empty-text{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:var(--slate-600);margin-bottom:8px;}
+.empty-sub{font-size:13px;color:var(--slate-700);max-width:300px;margin:0 auto 20px;line-height:1.6;}
+.members-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;}
+.member-card{background:var(--slate-950);border:1px solid rgba(212,168,83,0.08);border-radius:6px;padding:18px;transition:border-color 0.2s;}
+.member-card:hover{border-color:rgba(212,168,83,0.18);}
+.mc-top{display:flex;align-items:center;gap:12px;margin-bottom:14px;}
+.mc-info{flex:1;min-width:0;}
+.mc-name{font-size:15px;color:var(--slate-200);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.mc-email{font-family:'DM Mono',monospace;font-size:10px;color:var(--slate-600);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.mc-meta{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;}
+.mc-actions{display:flex;gap:6px;margin-top:12px;}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:1000;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--slate-900);border:1px solid rgba(212,168,83,0.2);border-radius:8px;width:100%;max-width:500px;max-height:92vh;overflow-y:auto;box-shadow:0 32px 80px rgba(0,0,0,0.6);}
+.modal-header{display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid rgba(212,168,83,0.08);}
+.modal-title{font-size:18px;font-weight:400;color:var(--slate-200);}
+.modal-eyebrow{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:var(--gold-400);margin-bottom:3px;}
+.modal-close{background:none;border:none;color:var(--slate-600);font-size:20px;cursor:pointer;transition:color 0.2s;line-height:1;}
+.modal-close:hover{color:var(--slate-200);}
+.modal-body{padding:24px;}
+.modal-footer{padding:16px 24px;border-top:1px solid rgba(212,168,83,0.08);display:flex;gap:10px;justify-content:flex-end;}
+.toast{position:fixed;bottom:32px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--slate-800);border:1px solid rgba(212,168,83,0.2);color:var(--slate-200);padding:12px 22px;border-radius:4px;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.06em;opacity:0;transition:opacity 0.3s,transform 0.3s;pointer-events:none;z-index:9999;white-space:nowrap;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+</style>
+</head>
+<body>
+<div class="sidebar">
+  <div class="logo">
+    <div class="logo-mark"><div class="logo-shield">🛡</div><span class="logo-name">AfterGuard</span></div>
+    <div class="logo-tagline">Secure Portal</div>
+  </div>
+  <nav class="nav">
+    <div class="nav-section-label">Monitor</div>
+    <a href="vigil-security.html" class="nav-item"><span class="nav-icon">🏠</span>Overview</a>
+    <div class="nav-section-label">Security</div>
+    <a href="alerts.html" class="nav-item"><span class="nav-icon">🔔</span>Alerts</a>
+    <a href="threats.html" class="nav-item"><span class="nav-icon">⚡</span>Threats</a>
+    <a href="threat-intel.html" class="nav-item"><span class="nav-icon">🔍</span>Threat Intel</a>
+    <div class="nav-section-label">Access</div>
+    <a href="access-control.html" class="nav-item"><span class="nav-icon">🔐</span>Access Control</a>
+    <div class="nav-section-label">Records</div>
+    <a href="estate-records.html" class="nav-item"><span class="nav-icon">📂</span>Estate Records</a>
+    <a href="family-portals.html" class="nav-item active"><span class="nav-icon">👨‍👩‍👧</span>Family Portals</a>
+    <div class="nav-section-label">Compliance</div>
+    <a href="audit-log.html" class="nav-item"><span class="nav-icon">📋</span>Audit Log</a>
+    <a href="staff-roles.html" class="nav-item"><span class="nav-icon">👥</span>Staff & Roles</a>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="user-card">
+      <div class="user-avatar">?</div>
+      <div class="user-info"><div class="user-name">Loading…</div><div class="user-role">Member</div></div>
+    </div>
+    <button class="signout-btn" onclick="handleSignOut()">→ Sign Out</button>
+  </div>
+</div>
+
+<div class="main">
+  <div class="topbar">
+    <div>
+      <div class="page-eyebrow">Records · Bereaved Family Access</div>
+      <div class="page-title">Family Portals</div>
+    </div>
+    <div class="topbar-right">
+      <span class="live-dot"></span>
+      <span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--slate-600);letter-spacing:0.1em;">LIVE · ENCRYPTED</span>
+      <button class="btn btn-solid" onclick="openInviteModal()">+ Invite Member</button>
+    </div>
+  </div>
+
+  <div class="content">
+    <div class="grid-4">
+      <div class="stat-card"><div class="stat-val" id="s-estates">—</div><div class="stat-label">Estate Portals</div><div class="stat-sub" id="s-estates-sub">Loading…</div></div>
+      <div class="stat-card"><div class="stat-val" id="s-members">—</div><div class="stat-label">Family Members</div><div class="stat-sub">With secure access</div></div>
+      <div class="stat-card"><div class="stat-val" id="s-roles">—</div><div class="stat-label">Unique Roles</div><div class="stat-sub">Attorneys, family, etc.</div></div>
+      <div class="stat-card"><div class="stat-val">0</div><div class="stat-label">Unauthorized Access</div><div class="stat-sub">✓ Clean</div></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <div><div class="panel-eyebrow">Family Access</div><div class="panel-title">Members by Estate Portal</div></div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input class="field-input" style="width:200px;padding:7px 12px;" placeholder="Search by name or estate…" oninput="filterMembers(this.value)">
+          <button class="btn btn-solid" onclick="openInviteModal()">+ Invite Member</button>
+        </div>
+      </div>
+      <div id="members-wrap">
+        <div class="empty-state"><div class="empty-icon">⏳</div><div class="empty-text">Loading members…</div></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <div><div class="panel-eyebrow">Overview</div><div class="panel-title">All Family Members</div></div>
+      </div>
+      <div class="panel-body">
+        <div class="members-grid" id="members-cards">
+          <div class="empty-state" style="padding:24px;grid-column:1/-1;"><div class="empty-icon">⏳</div><div class="empty-text">Loading…</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- INVITE MODAL -->
+<div class="modal-overlay" id="invite-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div><div class="modal-eyebrow">Family Access · Secure Invite</div><div class="modal-title">Invite a Family Member</div></div>
+      <button class="modal-close" onclick="closeInviteModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="alert" id="inv-err">⚠ <span id="inv-err-msg"></span></div>
+      <div class="alert" id="inv-ok">✓ Member added successfully to the estate portal</div>
+      <div class="field-group"><label class="field-label">Full Name *</label><input class="field-input" id="inv-name" placeholder="e.g. Margaret Whitmore"></div>
+      <div class="field-group"><label class="field-label">Email Address *</label><input class="field-input" id="inv-email" type="email" placeholder="family@example.com"></div>
+      <div class="field-group"><label class="field-label">Estate Portal *</label><select class="field-input" id="inv-estate"><option value="">— Select an estate —</option></select></div>
+      <div class="grid-2">
+        <div class="field-group"><label class="field-label">Role *</label><select class="field-input" id="inv-role"><option value="family">Family Member</option><option value="executor">Executor</option><option value="attorney">Attorney</option><option value="funeral_home">Funeral Home</option><option value="other">Other</option></select></div>
+        <div class="field-group"><label class="field-label">Relationship</label><select class="field-input" id="inv-rel"><option value="spouse">Spouse</option><option value="child">Child</option><option value="parent">Parent</option><option value="sibling">Sibling</option><option value="executor">Executor</option><option value="attorney">Attorney</option><option value="other">Other</option></select></div>
+      </div>
+      <div class="field-group"><label class="field-label">Phone (optional)</label><input class="field-input" id="inv-phone" placeholder="+1 (555) 000-0000"></div>
+      <div class="field-group"><label class="field-label">Access Level</label><select class="field-input" id="inv-access"><option value="view">View Only — can read documents, cannot upload</option><option value="full">Full Access — can upload, download, and message</option></select></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeInviteModal()">Cancel</button>
+      <button class="btn btn-solid" id="inv-btn" onclick="addMember()">Add to Portal</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let allMembers=[],allEstates=[];
+
+async function initPage(){await loadEstates();await loadMembers();}
+
+async function loadEstates(){
+  const {data}=await window._sb.from('estates').select('id,deceased_name,file_number,status').eq('owner_id',window._user.id).order('created_at',{ascending:false});
+  allEstates=data||[];
+  const sel=document.getElementById('inv-estate');
+  sel.innerHTML='<option value="">— Select an estate —</option>';
+  allEstates.forEach(e=>{const o=document.createElement('option');o.value=e.id;o.textContent=`${e.deceased_name} · ${e.file_number||'No file #'}`;sel.appendChild(o);});
+  document.getElementById('s-estates').textContent=allEstates.length;
+  document.getElementById('s-estates-sub').textContent=allEstates.length===1?'1 active portal':`${allEstates.length} portals`;
+}
+
+async function loadMembers(){
+  if(allEstates.length===0){renderEmpty();document.getElementById('s-members').textContent='0';document.getElementById('s-roles').textContent='0';return;}
+  const ids=allEstates.map(e=>e.id);
+  const {data}=await window._sb.from('estate_members').select('*').in('estate_id',ids).order('invited_at',{ascending:false});
+  allMembers=data||[];
+  document.getElementById('s-members').textContent=allMembers.length;
+  document.getElementById('s-roles').textContent=new Set(allMembers.map(m=>m.role)).size;
+  renderTable(allMembers);renderCards(allMembers);
+}
+
+function renderTable(list){
+  const wrap=document.getElementById('members-wrap');
+  if(allEstates.length===0){renderEmpty();return;}
+  if(list.length===0){
+    wrap.innerHTML=`<div class="empty-state"><div class="empty-icon">👨‍👩‍👧</div><div class="empty-text">No members yet</div><div class="empty-sub">Invite family members, attorneys, or funeral home staff to access estate portals.</div><button class="btn btn-solid" onclick="openInviteModal()">+ Invite First Member</button></div>`;
+    return;
+  }
+  const em={};allEstates.forEach(e=>em[e.id]=e);
+  const roleTags={family:'<span class="tag tag-green">Family</span>',executor:'<span class="tag tag-gold">Executor</span>',attorney:'<span class="tag tag-blue">Attorney</span>',funeral_home:'<span class="tag tag-yellow">Funeral Home</span>',other:'<span class="tag" style="background:rgba(255,255,255,0.05);color:var(--slate-400);border:1px solid rgba(255,255,255,0.08)">Other</span>'};
+  wrap.innerHTML=`<table class="tbl"><thead><tr><th>Member</th><th>Estate</th><th>Role</th><th>Relationship</th><th>Access</th><th>Invited</th><th>Actions</th></tr></thead><tbody>${list.map(m=>{
+    const est=em[m.estate_id]||{};
+    const ini=(m.member_name||'?').split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+    const inv=m.invited_at?new Date(m.invited_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}):'—';
+    const acc=m.access_level==='full'?'<span style="font-family:DM Mono,monospace;font-size:10px;color:var(--sage-light)">Full</span>':'<span style="font-family:DM Mono,monospace;font-size:10px;color:var(--slate-500)">View</span>';
+    return `<tr><td><div style="display:flex;align-items:center;gap:10px;"><div class="member-avatar" style="width:28px;height:28px;font-size:10px;">${ini}</div><div><div style="color:var(--slate-200);font-size:13.5px;">${esc(m.member_name||'—')}</div><div style="font-family:DM Mono,monospace;font-size:10px;color:var(--slate-600);">${esc(m.member_email||'')}</div></div></div></td><td style="font-size:13px;">${esc(est.deceased_name||'—')}<br><span style="font-family:DM Mono,monospace;font-size:10px;color:var(--gold-400);">${esc(est.file_number||'')}</span></td><td>${roleTags[m.role]||roleTags.other}</td><td style="font-size:12px;color:var(--slate-400);">${esc(m.relationship||'—')}</td><td>${acc}</td><td style="font-family:DM Mono,monospace;font-size:10px;color:var(--slate-600);">${inv}</td><td><button class="btn btn-danger" style="padding:4px 10px;font-size:10px;" onclick="removeMember('${m.id}','${esc(m.member_name||'')}')">✕ Remove</button></td></tr>`;
+  }).join('')}</tbody></table>`;
+}
+
+function renderCards(list){
+  const grid=document.getElementById('members-cards');
+  if(list.length===0){grid.innerHTML=`<div class="empty-state" style="padding:24px;grid-column:1/-1;"><div class="empty-icon">👨‍👩‍👧</div><div class="empty-text">No members yet — invite your first family member above</div></div>`;return;}
+  const em={};allEstates.forEach(e=>em[e.id]=e);
+  const rc={family:'var(--sage-light)',executor:'var(--gold-300)',attorney:'#93c5fd',funeral_home:'#fbbf24',other:'var(--slate-400)'};
+  const rl={family:'Family Member',executor:'Executor',attorney:'Attorney',funeral_home:'Funeral Home',other:'Other'};
+  grid.innerHTML=list.map(m=>{
+    const est=em[m.estate_id]||{};
+    const ini=(m.member_name||'?').split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+    return `<div class="member-card"><div class="mc-top"><div class="member-avatar">${ini}</div><div class="mc-info"><div class="mc-name">${esc(m.member_name||'—')}</div><div class="mc-email">${esc(m.member_email||'')}</div></div></div><div class="mc-meta"><span style="font-size:12px;color:var(--slate-400);">${esc(est.deceased_name||'—')} Estate</span><span style="font-family:'DM Mono',monospace;font-size:10px;color:${rc[m.role]||rc.other};">${rl[m.role]||'Member'}</span></div>${m.relationship?`<div style="font-size:12px;color:var(--slate-600);margin-top:6px;">${esc(m.relationship)}</div>`:''}<div class="mc-actions"><span style="flex:1;font-family:'DM Mono',monospace;font-size:9px;color:var(--slate-700);text-transform:uppercase;letter-spacing:0.1em;">${m.access_level==='full'?'● Full Access':'○ View Only'}</span><button class="btn btn-danger" style="padding:3px 10px;font-size:10px;" onclick="removeMember('${m.id}','${esc(m.member_name||'')}')">Remove</button></div></div>`;
+  }).join('');
+}
+
+function renderEmpty(){
+  document.getElementById('members-wrap').innerHTML=`<div class="empty-state"><div class="empty-icon">📂</div><div class="empty-text">No estates yet</div><div class="empty-sub">Create an estate portal first before inviting family members.</div><a href="estate-records.html" class="btn btn-solid" style="display:inline-flex">+ Create Estate First</a></div>`;
+  document.getElementById('members-cards').innerHTML=`<div class="empty-state" style="padding:24px;grid-column:1/-1;"><div class="empty-icon">📂</div><div class="empty-text">Create an estate portal first</div></div>`;
+}
+
+function filterMembers(q){
+  q=q.toLowerCase();
+  const em={};allEstates.forEach(e=>em[e.id]=e);
+  const f=allMembers.filter(m=>(m.member_name||'').toLowerCase().includes(q)||(m.member_email||'').toLowerCase().includes(q)||((em[m.estate_id]||{}).deceased_name||'').toLowerCase().includes(q));
+  renderTable(f);renderCards(f);
+}
+
+function openInviteModal(){document.getElementById('invite-modal').classList.add('open');document.getElementById('inv-name').focus();hideAlert('inv-err');hideAlert('inv-ok');}
+function closeInviteModal(){document.getElementById('invite-modal').classList.remove('open');['inv-name','inv-email','inv-phone'].forEach(id=>document.getElementById(id).value='');document.getElementById('inv-estate').value='';document.getElementById('inv-role').value='family';document.getElementById('inv-rel').value='spouse';document.getElementById('inv-access').value='view';}
+document.getElementById('invite-modal').addEventListener('click',e=>{if(e.target===document.getElementById('invite-modal'))closeInviteModal();});
+
+async function addMember(){
+  const name=document.getElementById('inv-name').value.trim();
+  const email=document.getElementById('inv-email').value.trim();
+  const estateId=document.getElementById('inv-estate').value;
+  const role=document.getElementById('inv-role').value;
+  const rel=document.getElementById('inv-rel').value;
+  const phone=document.getElementById('inv-phone').value.trim();
+  const access=document.getElementById('inv-access').value;
+  hideAlert('inv-err');hideAlert('inv-ok');
+  if(!name){showErr('inv-err','inv-err-msg',"Please enter the member's full name.");return;}
+  if(!email){showErr('inv-err','inv-err-msg','Please enter an email address.');return;}
+  if(!estateId){showErr('inv-err','inv-err-msg','Please select an estate portal.');return;}
+  const btn=document.getElementById('inv-btn');btn.textContent='Adding…';btn.disabled=true;
+  const {error}=await window._sb.from('estate_members').insert({estate_id:estateId,user_id:window._user.id,member_name:name,member_email:email,role,relationship:rel,phone:phone||null,access_level:access,invited_at:new Date().toISOString()});
+  btn.textContent='Add to Portal';btn.disabled=false;
+  if(error){showErr('inv-err','inv-err-msg',error.message);return;}
+  await window._sb.from('audit_events').insert({estate_id:estateId,user_id:window._user.id,event:`Family member invited: ${name} (${role}) — ${email}`}).catch(()=>{});
+  document.getElementById('inv-ok').style.display='flex';
+  toast(`✓ ${name} added to portal`);
+  setTimeout(closeInviteModal,1400);
+  await loadMembers();
+}
+
+async function removeMember(id,name){
+  if(!confirm(`Remove "${name}" from this portal? They will lose access immediately.`))return;
+  const {error}=await window._sb.from('estate_members').delete().eq('id',id);
+  if(error){toast('⚠ Could not remove member');return;}
+  await window._sb.from('audit_events').insert({user_id:window._user.id,event:`Family member removed: ${name}`}).catch(()=>{});
+  toast(`✓ ${name} removed from portal`);
+  await loadMembers();
+}
+
+function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/'/g,'&#39;');}
+function hideAlert(id){const el=document.getElementById(id);if(el){el.style.display='none';el.classList.remove('error','success');}}
+function showErr(aId,mId,msg){document.getElementById(mId).textContent=msg;const el=document.getElementById(aId);el.style.display='flex';el.classList.add('error');}
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
+</script>
+</body>
+</html>
