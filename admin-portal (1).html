@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AfterGuard — Admin Console</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --slate-950:#0a0c0f;--slate-900:#0f1318;--slate-800:#171d26;
+  --slate-700:#1f2937;--slate-600:#374151;--slate-500:#4b5563;
+  --slate-400:#9ca3af;--slate-300:#d1d5db;--slate-200:#e5e7eb;
+  --gold-400:#d4a853;--gold-300:#e2bb72;--gold-500:#b8922e;
+  --sage-light:#a3c4b5;--danger:#c0392b;--danger-light:#ef9a9a;
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--slate-950);color:var(--slate-300);font-family:'Cormorant Garamond',Georgia,serif;min-height:100vh;}
+
+/* ─── LOGIN ─────────────────────────────────────────────────── */
+#login-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;}
+.login-box{width:100%;max-width:380px;background:var(--slate-900);border:1px solid rgba(212,168,83,0.18);border-radius:8px;padding:40px;box-shadow:0 32px 80px rgba(0,0,0,0.6);}
+.login-logo{display:flex;align-items:center;gap:12px;margin-bottom:28px;}
+.login-shield{width:36px;height:36px;background:rgba(212,168,83,0.1);border:1px solid rgba(212,168,83,0.3);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;}
+.login-brand{font-size:18px;font-weight:300;letter-spacing:0.12em;color:var(--gold-300);}
+.login-title{font-size:1.7rem;font-weight:300;color:var(--slate-200);margin-bottom:3px;}
+.login-title em{font-style:italic;color:var(--gold-300);}
+.login-sub{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--slate-600);margin-bottom:28px;}
+.login-restricted{display:flex;align-items:center;gap:7px;background:rgba(192,57,43,0.08);border:1px solid rgba(192,57,43,0.2);border-radius:4px;padding:10px 13px;margin-bottom:22px;font-family:'DM Mono',monospace;font-size:10px;color:var(--danger-light);letter-spacing:0.06em;}
+.lf{margin-bottom:16px;}
+.ll{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:var(--slate-400);display:block;margin-bottom:7px;}
+.li{width:100%;padding:12px 14px;background:var(--slate-800);border:1px solid rgba(212,168,83,0.1);border-radius:3px;color:var(--slate-200);font-family:'DM Mono',monospace;font-size:12px;outline:none;transition:border-color 0.2s;}
+.li:focus{border-color:rgba(212,168,83,0.4);}
+.li::placeholder{color:var(--slate-600);}
+.login-btn{width:100%;padding:13px;background:var(--gold-500);border:1px solid var(--gold-400);color:var(--slate-950);font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;cursor:pointer;border-radius:3px;transition:all 0.2s;margin-top:6px;}
+.login-btn:hover{background:var(--gold-400);}
+.login-btn:disabled{opacity:0.5;cursor:not-allowed;}
+.login-err{background:rgba(192,57,43,0.1);border:1px solid rgba(192,57,43,0.25);color:var(--danger-light);border-radius:4px;padding:11px 14px;font-family:'DM Mono',monospace;font-size:11px;margin-bottom:14px;display:none;}
+.login-err.show{display:block;}
+.back-link{display:block;text-align:center;margin-top:20px;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--slate-700);text-decoration:none;transition:color 0.2s;}
+.back-link:hover{color:var(--gold-400);}
+
+/* ─── ADMIN LAYOUT ───────────────────────────────────────────── */
+#admin-screen{display:none;}
+.sidebar{position:fixed;top:0;left:0;bottom:0;width:240px;background:var(--slate-900);border-right:1px solid rgba(212,168,83,0.12);display:flex;flex-direction:column;z-index:200;}
+.sb-logo{padding:26px 24px 20px;border-bottom:1px solid rgba(212,168,83,0.1);}
+.sb-logo-row{display:flex;align-items:center;gap:10px;margin-bottom:3px;}
+.sb-shield{width:30px;height:30px;background:rgba(212,168,83,0.1);border:1px solid rgba(212,168,83,0.25);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;}
+.sb-name{font-size:15px;font-weight:300;letter-spacing:0.12em;color:var(--gold-300);}
+.sb-tag{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.22em;text-transform:uppercase;color:var(--danger-light);padding-left:2px;margin-top:2px;}
+.sb-nav{flex:1;padding:16px 0;overflow-y:auto;}
+.sb-section{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.22em;text-transform:uppercase;color:var(--slate-600);padding:0 24px;margin-top:18px;margin-bottom:6px;}
+.sb-item{display:flex;align-items:center;gap:11px;padding:10px 24px;font-size:14px;color:var(--slate-400);border-left:2px solid transparent;cursor:pointer;transition:all 0.15s;user-select:none;}
+.sb-item:hover{color:var(--slate-200);background:rgba(212,168,83,0.04);}
+.sb-item.active{color:var(--gold-300);border-left-color:var(--gold-400);background:rgba(212,168,83,0.06);}
+.sb-icon{width:18px;text-align:center;flex-shrink:0;font-size:15px;}
+.sb-footer{padding:16px 24px;border-top:1px solid rgba(212,168,83,0.08);}
+.sb-user{display:flex;align-items:center;gap:9px;margin-bottom:10px;}
+.sb-avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#c0392b,var(--gold-500));display:flex;align-items:center;justify-content:center;font-size:12px;color:#fff;font-weight:700;flex-shrink:0;}
+.sb-uname{font-size:13px;color:var(--slate-200);}
+.sb-urole{font-family:'DM Mono',monospace;font-size:9px;color:var(--danger-light);letter-spacing:0.1em;text-transform:uppercase;margin-top:2px;}
+.signout-btn{width:100%;background:transparent;border:1px solid rgba(212,168,83,0.12);border-radius:3px;color:var(--slate-400);font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;padding:7px;cursor:pointer;transition:all 0.2s;}
+.signout-btn:hover{border-color:rgba(212,168,83,0.3);color:var(--gold-300);}
+
+.admin-main{margin-left:240px;min-height:100vh;display:flex;flex-direction:column;}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:18px 36px;border-bottom:1px solid rgba(212,168,83,0.08);background:var(--slate-950);position:sticky;top:0;z-index:100;backdrop-filter:blur(12px);}
+.tb-left{}
+.tb-eyebrow{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:var(--danger-light);margin-bottom:2px;}
+.tb-title{font-size:24px;font-weight:300;color:var(--slate-200);}
+.tb-right{display:flex;gap:10px;align-items:center;}
+.content{padding:30px 36px;flex:1;}
+
+/* ─── SECTIONS ───────────────────────────────────────────────── */
+.sec{display:none;}
+.sec.active{display:block;}
+
+/* ─── STATS ─────────────────────────────────────────────────── */
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px;}
+.stat-card{background:var(--slate-900);border:1px solid rgba(212,168,83,0.1);border-radius:6px;padding:22px 22px 18px;position:relative;overflow:hidden;}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--accent,var(--gold-500));opacity:0.65;}
+.stat-num{font-family:'Cormorant Garamond',serif;font-size:40px;font-weight:300;color:var(--slate-100);line-height:1;margin-bottom:6px;}
+.stat-lbl{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:var(--slate-600);}
+
+/* ─── PANEL ──────────────────────────────────────────────────── */
+.panel{background:var(--slate-900);border:1px solid rgba(212,168,83,0.1);border-radius:6px;overflow:hidden;margin-bottom:22px;}
+.ph{display:flex;align-items:center;justify-content:space-between;padding:17px 24px;border-bottom:1px solid rgba(212,168,83,0.07);}
+.ph-left .ey{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--gold-400);margin-bottom:3px;}
+.ph-left .pt{font-size:16px;font-weight:400;color:var(--slate-200);}
+.pb{padding:0;}
+
+/* ─── TABLE ──────────────────────────────────────────────────── */
+.tbl{width:100%;border-collapse:collapse;}
+.tbl thead tr{border-bottom:1px solid rgba(212,168,83,0.08);}
+.tbl th{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:var(--slate-600);padding:11px 20px;text-align:left;white-space:nowrap;}
+.tbl td{padding:14px 20px;font-size:13px;border-bottom:1px solid rgba(255,255,255,0.03);vertical-align:middle;}
+.tbl tr:last-child td{border-bottom:none;}
+.tbl tbody tr:hover td{background:rgba(212,168,83,0.025);}
+.cell-mono{font-family:'DM Mono',monospace;font-size:11px;color:var(--slate-500);}
+.cell-name{font-size:14px;color:var(--slate-200);}
+
+/* ─── TAGS ───────────────────────────────────────────────────── */
+.tag{display:inline-flex;align-items:center;font-family:'DM Mono',monospace;font-size:10px;padding:3px 9px;border-radius:99px;white-space:nowrap;}
+.tag-green{background:rgba(45,106,79,0.15);color:var(--sage-light);border:1px solid rgba(45,106,79,0.25);}
+.tag-yellow{background:rgba(217,119,6,0.12);color:#fbbf24;border:1px solid rgba(217,119,6,0.2);}
+.tag-red{background:rgba(192,57,43,0.12);color:var(--danger-light);border:1px solid rgba(192,57,43,0.2);}
+.tag-gold{background:rgba(212,168,83,0.1);color:var(--gold-300);border:1px solid rgba(212,168,83,0.2);}
+.tag-blue{background:rgba(59,130,246,0.1);color:#93c5fd;border:1px solid rgba(59,130,246,0.18);}
+.tag-sage{background:rgba(122,158,142,0.1);color:var(--sage-light);border:1px solid rgba(122,158,142,0.2);}
+
+/* ─── BUTTONS ────────────────────────────────────────────────── */
+.btn{display:inline-flex;align-items:center;gap:7px;padding:8px 16px;border-radius:4px;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.07em;cursor:pointer;transition:all 0.2s;border:none;white-space:nowrap;}
+.btn-gold{background:var(--gold-500);color:var(--slate-950);font-weight:600;}
+.btn-gold:hover{background:var(--gold-400);}
+.btn-ghost{background:transparent;color:var(--slate-400);border:1px solid var(--slate-700);}
+.btn-ghost:hover{color:var(--slate-200);border-color:var(--slate-500);}
+.btn-danger{background:rgba(192,57,43,0.12);border:1px solid rgba(192,57,43,0.25);color:var(--danger-light);}
+.btn-danger:hover{background:rgba(192,57,43,0.2);}
+.btn-sm{padding:4px 10px;font-size:10px;}
+
+/* ─── CODE BADGE ─────────────────────────────────────────────── */
+.code-badge{font-family:'DM Mono',monospace;font-size:11px;color:var(--gold-200,#f0d4a0);background:rgba(212,168,83,0.08);border:1px solid rgba(212,168,83,0.18);padding:4px 10px;border-radius:3px;letter-spacing:0.07em;cursor:pointer;transition:background 0.2s;display:inline-block;}
+.code-badge:hover{background:rgba(212,168,83,0.16);}
+
+/* ─── MODAL ──────────────────────────────────────────────────── */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:500;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
+.overlay.open{display:flex;}
+.modal{background:var(--slate-900);border:1px solid rgba(212,168,83,0.18);border-radius:8px;width:100%;max-width:500px;max-height:90vh;overflow-y:auto;box-shadow:0 40px 100px rgba(0,0,0,0.7);}
+.mh{display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid rgba(212,168,83,0.08);}
+.mh-left .mey{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:var(--gold-400);margin-bottom:3px;}
+.mh-left .mt{font-size:17px;font-weight:400;color:var(--slate-200);}
+.mclose{background:none;border:none;color:var(--slate-500);font-size:22px;cursor:pointer;transition:color 0.2s;line-height:1;}
+.mclose:hover{color:var(--slate-200);}
+.mb{padding:24px;}
+.mf{padding:16px 24px;border-top:1px solid rgba(212,168,83,0.08);display:flex;gap:10px;justify-content:flex-end;}
+
+/* ─── FORM ───────────────────────────────────────────────────── */
+.fg{margin-bottom:15px;}
+.fl{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:var(--slate-400);display:block;margin-bottom:7px;}
+.fi{width:100%;padding:10px 14px;background:var(--slate-800);border:1px solid rgba(212,168,83,0.1);border-radius:3px;color:var(--slate-200);font-family:'DM Mono',monospace;font-size:12px;outline:none;transition:border-color 0.2s;}
+.fi:focus{border-color:rgba(212,168,83,0.4);}
+.fi::placeholder{color:var(--slate-600);}
+select.fi option{background:var(--slate-800);}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+
+/* ─── FORM ALERT ─────────────────────────────────────────────── */
+.form-err{display:none;background:rgba(192,57,43,0.12);border:1px solid rgba(192,57,43,0.25);color:var(--danger-light);border-radius:4px;padding:11px 14px;font-family:'DM Mono',monospace;font-size:11px;margin-bottom:14px;}
+.form-err.show{display:block;}
+
+/* ─── CODE REVEAL ────────────────────────────────────────────── */
+.code-reveal-box{background:rgba(212,168,83,0.06);border:1px solid rgba(212,168,83,0.25);border-radius:6px;padding:22px;text-align:center;margin:16px 0;}
+.crb-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:var(--gold-400);margin-bottom:12px;}
+.crb-code{font-family:'DM Mono',monospace;font-size:20px;color:#f0d4a0;letter-spacing:0.1em;margin-bottom:10px;cursor:pointer;transition:color 0.2s;}
+.crb-code:hover{color:var(--gold-300);}
+.crb-hint{font-family:'DM Mono',monospace;font-size:10px;color:var(--slate-600);}
+
+/* ─── EMPTY STATE ────────────────────────────────────────────── */
+.empty{text-align:center;padding:56px 20px;}
+.empty-icon{font-size:28px;margin-bottom:10px;opacity:0.25;}
+.empty-text{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--slate-600);margin-bottom:16px;}
+
+/* ─── TOAST ──────────────────────────────────────────────────── */
+#toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(16px);background:var(--slate-800);border:1px solid rgba(212,168,83,0.2);color:var(--slate-200);padding:12px 22px;border-radius:4px;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.06em;opacity:0;transition:opacity 0.25s,transform 0.25s;pointer-events:none;z-index:9999;white-space:nowrap;}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+/* ─── OVERVIEW GRID ──────────────────────────────────────────── */
+.ov-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+</style>
+</head>
+<body>
+
+<!-- ════ LOGIN SCREEN ════ -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="login-shield">🛡</div>
+      <span class="login-brand">AfterGuard</span>
+    </div>
+    <div class="login-title">Admin <em>Console</em></div>
+    <div class="login-sub">Restricted · Authorized Personnel Only</div>
+    <div class="login-restricted">🔒 Only afterguardsecure@gmail.com may access this portal</div>
+    <div class="login-err" id="login-err">⚠ Invalid credentials or unauthorized account.</div>
+    <div class="lf"><label class="ll">Email Address</label><input class="li" type="email" id="adm-email" placeholder="afterguardsecure@gmail.com"></div>
+    <div class="lf"><label class="ll">Password</label><input class="li" type="password" id="adm-pwd" placeholder="••••••••••••" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <button class="login-btn" id="login-btn" onclick="doLogin()">Access Admin Portal</button>
+    <a href="afterguard-auth.html" class="back-link">← Back to AfterGuard</a>
+  </div>
+</div>
+
+<!-- ════ ADMIN PORTAL ════ -->
+<div id="admin-screen">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sb-logo">
+      <div class="sb-logo-row"><div class="sb-shield">🛡</div><span class="sb-name">AfterGuard</span></div>
+      <div class="sb-tag">Admin Console</div>
+    </div>
+    <nav class="sb-nav">
+      <div class="sb-section">Dashboard</div>
+      <div class="sb-item active" data-sec="overview"><span class="sb-icon">📊</span>Overview</div>
+      <div class="sb-section">Funeral Homes</div>
+      <div class="sb-item" data-sec="funeral-homes"><span class="sb-icon">🏛️</span>Funeral Homes</div>
+      <div class="sb-item" data-sec="enterprise-codes"><span class="sb-icon">🔑</span>Enterprise Codes</div>
+      <div class="sb-section">Access Codes</div>
+      <div class="sb-item" data-sec="family-codes"><span class="sb-icon">👨‍👩‍👧</span>Family Codes</div>
+      <div class="sb-item" data-sec="attorney-codes"><span class="sb-icon">⚖️</span>Attorney Codes</div>
+      <div class="sb-section">Platform</div>
+      <div class="sb-item" data-sec="all-users"><span class="sb-icon">👥</span>All Users</div>
+    </nav>
+    <div class="sb-footer">
+      <div class="sb-user">
+        <div class="sb-avatar">IS</div>
+        <div><div class="sb-uname">Ishaan Samantray</div><div class="sb-urole">Super Admin</div></div>
+      </div>
+      <button class="signout-btn" onclick="doSignOut()">→ Sign Out</button>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="admin-main">
+    <div class="topbar">
+      <div class="tb-left">
+        <div class="tb-eyebrow" id="tb-eye">Admin Console · Overview</div>
+        <div class="tb-title" id="tb-title">Dashboard</div>
+      </div>
+      <div class="tb-right">
+        <button class="btn btn-ghost" onclick="refreshCurrent()">↻ Refresh</button>
+        <button class="btn btn-gold" onclick="openModal('modal-fh')">+ Add Funeral Home</button>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- ── OVERVIEW ── -->
+      <div class="sec active" id="sec-overview">
+        <div class="stat-grid">
+          <div class="stat-card" style="--accent:#ef9a9a"><div class="stat-num" id="st-fh">—</div><div class="stat-lbl">Funeral Homes</div></div>
+          <div class="stat-card" style="--accent:var(--gold-400)"><div class="stat-num" id="st-ent">—</div><div class="stat-lbl">Enterprise Codes</div></div>
+          <div class="stat-card" style="--accent:var(--sage-light)"><div class="stat-num" id="st-acc">—</div><div class="stat-lbl">Access Codes Issued</div></div>
+          <div class="stat-card" style="--accent:#93c5fd"><div class="stat-num" id="st-usr">—</div><div class="stat-lbl">Total Users</div></div>
+        </div>
+        <div class="ov-grid">
+          <div class="panel">
+            <div class="ph"><div class="ph-left"><div class="ey">Activity</div><div class="pt">Recent Sign-Ups</div></div></div>
+            <div class="pb" id="ov-users"></div>
+          </div>
+          <div class="panel">
+            <div class="ph"><div class="ph-left"><div class="ey">Codes</div><div class="pt">Recently Used Codes</div></div></div>
+            <div class="pb" id="ov-codes"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── FUNERAL HOMES ── -->
+      <div class="sec" id="sec-funeral-homes">
+        <div class="panel">
+          <div class="ph">
+            <div class="ph-left"><div class="ey">Partner Management</div><div class="pt">Registered Funeral Homes</div></div>
+            <button class="btn btn-gold" onclick="openModal('modal-fh')">+ Add Funeral Home</button>
+          </div>
+          <div class="pb" id="fh-wrap"></div>
+        </div>
+      </div>
+
+      <!-- ── ENTERPRISE CODES ── -->
+      <div class="sec" id="sec-enterprise-codes">
+        <div class="panel">
+          <div class="ph">
+            <div class="ph-left"><div class="ey">Funeral Home Access</div><div class="pt">Enterprise Codes</div></div>
+            <button class="btn btn-gold" onclick="openGenModal('funeral_home')">+ Generate Code</button>
+          </div>
+          <div class="pb" id="ent-wrap"></div>
+        </div>
+      </div>
+
+      <!-- ── FAMILY CODES ── -->
+      <div class="sec" id="sec-family-codes">
+        <div class="panel">
+          <div class="ph">
+            <div class="ph-left"><div class="ey">Family Access</div><div class="pt">Family Portal Codes</div></div>
+            <button class="btn btn-gold" onclick="openGenModal('family')">+ Generate Code</button>
+          </div>
+          <div class="pb" id="fam-wrap"></div>
+        </div>
+      </div>
+
+      <!-- ── ATTORNEY CODES ── -->
+      <div class="sec" id="sec-attorney-codes">
+        <div class="panel">
+          <div class="ph">
+            <div class="ph-left"><div class="ey">Legal Access</div><div class="pt">Attorney / Legal Codes</div></div>
+            <button class="btn btn-gold" onclick="openGenModal('attorney')">+ Generate Code</button>
+          </div>
+          <div class="pb" id="atty-wrap"></div>
+        </div>
+      </div>
+
+      <!-- ── ALL USERS ── -->
+      <div class="sec" id="sec-all-users">
+        <div class="panel">
+          <div class="ph">
+            <div class="ph-left"><div class="ey">Platform</div><div class="pt">All Registered Users</div></div>
+            <span id="user-count" style="font-family:'DM Mono',monospace;font-size:11px;color:var(--slate-600)"></span>
+          </div>
+          <div class="pb" id="users-wrap"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ════ MODAL: ADD FUNERAL HOME ════ -->
+<div class="overlay" id="modal-fh">
+  <div class="modal">
+    <div class="mh">
+      <div class="mh-left"><div class="mey">Partner Onboarding</div><div class="mt">Add Funeral Home</div></div>
+      <button class="mclose" onclick="closeModal('modal-fh')">✕</button>
+    </div>
+    <div class="mb">
+      <div class="form-err" id="fh-err"></div>
+      <div class="grid2">
+        <div class="fg"><label class="fl">Funeral Home Name *</label><input class="fi" id="fh-name" placeholder="Henderson Funeral Services"></div>
+        <div class="fg"><label class="fl">Contact Name *</label><input class="fi" id="fh-contact" placeholder="James Henderson"></div>
+      </div>
+      <div class="fg"><label class="fl">Email Address *</label><input class="fi" id="fh-email" type="email" placeholder="james@hendersonfh.com"></div>
+      <div class="grid2">
+        <div class="fg"><label class="fl">Phone</label><input class="fi" id="fh-phone" placeholder="+1 (555) 000-0000"></div>
+        <div class="fg"><label class="fl">State</label><input class="fi" id="fh-state" placeholder="New York"></div>
+      </div>
+      <div class="fg"><label class="fl">Address</label><input class="fi" id="fh-address" placeholder="123 Main St, City, NY"></div>
+      <div class="fg"><label class="fl">Plan</label>
+        <select class="fi" id="fh-plan">
+          <option value="pilot">Pilot (Free)</option>
+          <option value="basic">Basic</option>
+          <option value="enterprise">Enterprise</option>
+        </select>
+      </div>
+      <div class="fg"><label class="fl">Notes (optional)</label><input class="fi" id="fh-notes" placeholder="How they found us, outreach notes…"></div>
+    </div>
+    <div class="mf">
+      <button class="btn btn-ghost" onclick="closeModal('modal-fh')">Cancel</button>
+      <button class="btn btn-gold" id="fh-submit-btn" onclick="addFuneralHome()">Add & Generate Code</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════ MODAL: GENERATE CODE ════ -->
+<div class="overlay" id="modal-gen">
+  <div class="modal">
+    <div class="mh">
+      <div class="mh-left"><div class="mey" id="gen-eye">Generate Code</div><div class="mt" id="gen-title">New Access Code</div></div>
+      <button class="mclose" onclick="closeModal('modal-gen')">✕</button>
+    </div>
+    <div class="mb">
+      <div class="form-err" id="gen-err"></div>
+      <div class="fg"><label class="fl">Assigned To</label><input class="fi" id="gen-assigned" placeholder="Henderson Funeral Services or Family Name"></div>
+      <div class="fg"><label class="fl">Notes (optional)</label><input class="fi" id="gen-notes" placeholder="Sent via email Feb 26 2026"></div>
+      <div id="gen-result" style="display:none;">
+        <div class="code-reveal-box">
+          <div class="crb-label">🔑 Your New Access Code</div>
+          <div class="crb-code" id="gen-code-val" onclick="copyVal(this.textContent)">—</div>
+          <div class="crb-hint">Click the code to copy it to clipboard</div>
+        </div>
+        <p style="font-size:13px;color:var(--slate-500);font-family:'DM Mono',monospace;font-size:11px;line-height:1.6;">This code can be used once to create one account. Share it directly with the recipient.</p>
+      </div>
+    </div>
+    <div class="mf" id="gen-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-gen')">Close</button>
+      <button class="btn btn-gold" id="gen-btn" onclick="generateCode()">Generate Code</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const SB_URL  = 'https://bzscltliqeijqskcdajp.supabase.co';
+const SB_KEY  = 'sb_publishable_LFfDCNnaH2PDo0auIBn9oA_td5dL5bD';
+const ADMIN_EMAIL = 'afterguardsecure@gmail.com';
+const { createClient } = supabase;
+const sb = createClient(SB_URL, SB_KEY);
+
+let activeSec = 'overview';
+let genType   = 'funeral_home';
+
+// ── SECTION META ──────────────────────────────────────────────────────
+const META = {
+  'overview':         { eye:'Admin Console · Overview',       title:'Dashboard' },
+  'funeral-homes':    { eye:'Partner Management',             title:'Funeral Homes' },
+  'enterprise-codes': { eye:'Access Control · Funeral Home',  title:'Enterprise Codes' },
+  'family-codes':     { eye:'Access Control · Family',        title:'Family Portal Codes' },
+  'attorney-codes':   { eye:'Access Control · Legal',         title:'Attorney Codes' },
+  'all-users':        { eye:'Platform · Accounts',            title:'All Users' },
+};
+
+// ── LOGIN ─────────────────────────────────────────────────────────────
+async function doLogin() {
+  const email = document.getElementById('adm-email').value.trim();
+  const pwd   = document.getElementById('adm-pwd').value;
+  const errEl = document.getElementById('login-err');
+  const btn   = document.getElementById('login-btn');
+  errEl.classList.remove('show');
+
+  if (email.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
+    errEl.textContent = '⚠ Unauthorized — this portal is restricted.';
+    errEl.classList.add('show'); return;
+  }
+
+  btn.textContent = 'Signing in…'; btn.disabled = true;
+  const { data, error } = await sb.auth.signInWithPassword({ email, password: pwd });
+  btn.textContent = 'Access Admin Portal'; btn.disabled = false;
+
+  if (error || !data.session) {
+    errEl.textContent = '⚠ ' + (error?.message || 'Login failed.');
+    errEl.classList.add('show'); return;
+  }
+  launchPortal();
+}
+
+async function doSignOut() {
+  await sb.auth.signOut();
+  window.location.reload();
+}
+
+function launchPortal() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('admin-screen').style.display = 'block';
+  setupNavClicks();
+  loadStats();
+  loadSection('overview');
+}
+
+// ── AUTO-LOGIN ────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', async () => {
+  const { data: { session } } = await sb.auth.getSession();
+  if (session && session.user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) launchPortal();
+});
+
+// ── NAV ───────────────────────────────────────────────────────────────
+function setupNavClicks() {
+  document.querySelectorAll('.sb-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const sec = item.dataset.sec;
+      document.querySelectorAll('.sb-item').forEach(i => i.classList.remove('active'));
+      item.classList.add('active');
+      document.querySelectorAll('.sec').forEach(s => s.classList.remove('active'));
+      document.getElementById('sec-' + sec).classList.add('active');
+      activeSec = sec;
+      const m = META[sec] || {};
+      document.getElementById('tb-eye').textContent   = m.eye   || '';
+      document.getElementById('tb-title').textContent = m.title || '';
+      loadSection(sec);
+    });
+  });
+}
+
+function refreshCurrent() { loadStats(); loadSection(activeSec); toast('↻ Refreshed'); }
+
+function loadSection(sec) {
+  if (sec === 'overview')         loadOverview();
+  if (sec === 'funeral-homes')    loadFuneralHomes();
+  if (sec === 'enterprise-codes') loadCodes('funeral_home', 'ent-wrap');
+  if (sec === 'family-codes')     loadCodes('family', 'fam-wrap');
+  if (sec === 'attorney-codes')   loadCodes('attorney', 'atty-wrap');
+  if (sec === 'all-users')        loadAllUsers();
+}
+
+// ── STATS ─────────────────────────────────────────────────────────────
+async function loadStats() {
+  const [fhR, cR, uR, entR] = await Promise.all([
+    sb.from('funeral_homes').select('id',{count:'exact',head:true}),
+    sb.from('access_codes').select('id',{count:'exact',head:true}),
+    sb.from('user_profiles').select('id',{count:'exact',head:true}),
+    sb.from('access_codes').select('id',{count:'exact',head:true}).eq('account_type','funeral_home'),
+  ]);
+  document.getElementById('st-fh').textContent  = fhR.count  ?? '0';
+  document.getElementById('st-ent').textContent = entR.count ?? '0';
+  document.getElementById('st-acc').textContent = cR.count   ?? '0';
+  document.getElementById('st-usr').textContent = uR.count   ?? '0';
+}
+
+// ── OVERVIEW ──────────────────────────────────────────────────────────
+async function loadOverview() {
+  // Recent users
+  const { data: users } = await sb.from('user_profiles').select('*').order('created_at',{ascending:false}).limit(7);
+  const ouw = document.getElementById('ov-users');
+  if (!users?.length) { ouw.innerHTML = emptyHtml('👥','No users yet'); }
+  else {
+    ouw.innerHTML = `<table class="tbl">
+      <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Joined</th></tr></thead>
+      <tbody>${users.map(u=>`<tr>
+        <td class="cell-name">${esc(u.full_name||'—')}</td>
+        <td class="cell-mono">${esc(u.email||'')}</td>
+        <td>${roleTag(u.account_type)}</td>
+        <td class="cell-mono">${fmt(u.created_at)}</td>
+      </tr>`).join('')}</tbody></table>`;
+  }
+
+  // Recently used codes
+  const { data: codes } = await sb.from('access_codes').select('*').eq('used',true).order('created_at',{ascending:false}).limit(7);
+  const ocw = document.getElementById('ov-codes');
+  if (!codes?.length) { ocw.innerHTML = emptyHtml('🔑','No used codes yet'); }
+  else {
+    ocw.innerHTML = `<table class="tbl">
+      <thead><tr><th>Code</th><th>Type</th><th>Used By</th></tr></thead>
+      <tbody>${codes.map(c=>`<tr>
+        <td><span class="code-badge" onclick="copyVal('${esc(c.code)}')">${esc(c.code)}</span></td>
+        <td>${roleTag(c.account_type)}</td>
+        <td class="cell-mono">${esc(c.used_by_email||'—')}</td>
+      </tr>`).join('')}</tbody></table>`;
+  }
+}
+
+// ── FUNERAL HOMES ─────────────────────────────────────────────────────
+async function loadFuneralHomes() {
+  const { data } = await sb.from('funeral_homes').select('*').order('created_at',{ascending:false});
+  const wrap = document.getElementById('fh-wrap');
+  if (!data?.length) { wrap.innerHTML = emptyHtml('🏛️','No funeral homes yet — add your first partner'); return; }
+  const planTag = p => ({pilot:'<span class="tag tag-yellow">Pilot</span>',basic:'<span class="tag tag-blue">Basic</span>',enterprise:'<span class="tag tag-gold">Enterprise</span>'}[p]||`<span class="tag">${esc(p)}</span>`);
+  wrap.innerHTML = `<table class="tbl">
+    <thead><tr><th>Funeral Home</th><th>Contact</th><th>Email</th><th>State</th><th>Plan</th><th>Enterprise Code</th><th>Added</th><th>Actions</th></tr></thead>
+    <tbody>${data.map(fh=>`<tr>
+      <td class="cell-name">${esc(fh.name)}</td>
+      <td>${esc(fh.contact_name||'—')}</td>
+      <td class="cell-mono">${esc(fh.email||'')}</td>
+      <td class="cell-mono">${esc(fh.state||'—')}</td>
+      <td>${planTag(fh.plan)}</td>
+      <td>${fh.enterprise_code?`<span class="code-badge" onclick="copyVal('${fh.enterprise_code}')">${fh.enterprise_code}</span>`:'<span style="color:var(--slate-700);font-size:12px;">—</span>'}</td>
+      <td class="cell-mono">${fmt(fh.created_at)}</td>
+      <td style="white-space:nowrap;">
+        <button class="btn btn-ghost btn-sm" onclick="newCodeForFH('${fh.id}','${esc(fh.name)}')">New Code</button>
+        <button class="btn btn-danger btn-sm" style="margin-left:5px;" onclick="deleteFH('${fh.id}','${esc(fh.name)}')">Remove</button>
+      </td>
+    </tr>`).join('')}</tbody></table>`;
+}
+
+// ── ACCESS CODES TABLE ────────────────────────────────────────────────
+async function loadCodes(type, wrapId) {
+  const { data } = await sb.from('access_codes').select('*').eq('account_type',type).order('created_at',{ascending:false});
+  const wrap = document.getElementById(wrapId);
+  if (!data?.length) { wrap.innerHTML = emptyHtml('🔑',`No ${type.replace('_',' ')} codes yet`); return; }
+  wrap.innerHTML = `<table class="tbl">
+    <thead><tr><th>Code</th><th>Assigned To</th><th>Status</th><th>Used By Email</th><th>Notes</th><th>Created</th><th></th></tr></thead>
+    <tbody>${data.map(c=>`<tr>
+      <td><span class="code-badge" onclick="copyVal('${esc(c.code)}')">${esc(c.code)}</span></td>
+      <td>${esc(c.assigned_to||'—')}</td>
+      <td>${c.used?'<span class="tag tag-red">Used</span>':'<span class="tag tag-green">Active</span>'}</td>
+      <td class="cell-mono">${esc(c.used_by_email||'—')}</td>
+      <td style="font-size:12px;color:var(--slate-500)">${esc(c.notes||'—')}</td>
+      <td class="cell-mono">${fmt(c.created_at)}</td>
+      <td>${!c.used?`<button class="btn btn-danger btn-sm" onclick="revokeCode('${c.id}')">Revoke</button>`:''}</td>
+    </tr>`).join('')}</tbody></table>`;
+}
+
+// ── ALL USERS ─────────────────────────────────────────────────────────
+async function loadAllUsers() {
+  const { data, error } = await sb.from('user_profiles').select('*').order('created_at',{ascending:false});
+  const wrap = document.getElementById('users-wrap');
+  if (error) { wrap.innerHTML = emptyHtml('⚠','Error loading users: '+error.message); return; }
+  if (!data?.length) { wrap.innerHTML = emptyHtml('👥','No users have signed up yet'); return; }
+  document.getElementById('user-count').textContent = data.length + ' total';
+  wrap.innerHTML = `<table class="tbl">
+    <thead><tr><th>Full Name</th><th>Email</th><th>Account Type</th><th>Organization</th><th>Username</th><th>Joined</th></tr></thead>
+    <tbody>${data.map(u=>`<tr>
+      <td class="cell-name">${esc(u.full_name||'—')}</td>
+      <td class="cell-mono">${esc(u.email||'—')}</td>
+      <td>${roleTag(u.account_type)}</td>
+      <td style="font-size:13px;color:var(--slate-400)">${esc(u.organization||'—')}</td>
+      <td class="cell-mono">${esc(u.username||'—')}</td>
+      <td class="cell-mono">${fmt(u.created_at)}</td>
+    </tr>`).join('')}</tbody></table>`;
+}
+
+// ── ADD FUNERAL HOME ──────────────────────────────────────────────────
+async function addFuneralHome() {
+  const name    = v('fh-name'), contact = v('fh-contact'), email = v('fh-email');
+  const phone   = v('fh-phone'), state = v('fh-state'), address = v('fh-address');
+  const plan    = document.getElementById('fh-plan').value;
+  const notes   = v('fh-notes');
+  const errEl   = document.getElementById('fh-err');
+  errEl.classList.remove('show');
+
+  if (!name || !contact || !email) {
+    errEl.textContent = '⚠ Name, contact person, and email are required.';
+    errEl.classList.add('show'); return;
+  }
+
+  const btn = document.getElementById('fh-submit-btn');
+  btn.textContent = 'Adding…'; btn.disabled = true;
+
+  const code = genCode('AG-ENT');
+  const { data: fh, error } = await sb.from('funeral_homes').insert({
+    name, contact_name:contact, email, phone:phone||null,
+    state:state||null, address:address||null, plan, notes:notes||null,
+    enterprise_code: code
+  }).select().single();
+
+  if (error) {
+    errEl.textContent = '⚠ ' + error.message; errEl.classList.add('show');
+    btn.textContent = 'Add & Generate Code'; btn.disabled = false; return;
+  }
+
+  // Save code row
+  await sb.from('access_codes').insert({
+    code, account_type:'funeral_home', assigned_to:name,
+    notes:'Auto-generated on add', funeral_home_id: fh.id
+  });
+
+  btn.textContent = 'Add & Generate Code'; btn.disabled = false;
+  closeModal('modal-fh');
+  clearFHForm();
+  toast(`✓ ${name} added · Code: ${code} (copied!)`);
+  copyVal(code);
+  loadFuneralHomes();
+  loadStats();
+}
+
+// ── NEW CODE FOR EXISTING FH ──────────────────────────────────────────
+async function newCodeForFH(fhId, fhName) {
+  const code = genCode('AG-ENT');
+  await sb.from('access_codes').insert({ code, account_type:'funeral_home', assigned_to:fhName, funeral_home_id:fhId });
+  await sb.from('funeral_homes').update({ enterprise_code:code }).eq('id',fhId);
+  copyVal(code);
+  toast(`✓ New code for ${fhName}: ${code} (copied!)`);
+  loadFuneralHomes();
+  loadCodes('funeral_home','ent-wrap');
+}
+
+// ── DELETE FH ─────────────────────────────────────────────────────────
+async function deleteFH(id, name) {
+  if (!confirm(`Remove "${name}" from AfterGuard? Their users and codes will remain.`)) return;
+  await sb.from('funeral_homes').delete().eq('id',id);
+  toast(`✓ ${name} removed`);
+  loadFuneralHomes(); loadStats();
+}
+
+// ── GENERATE CODE MODAL ───────────────────────────────────────────────
+function openGenModal(type) {
+  genType = type;
+  const titles = { funeral_home:'Enterprise Code', family:'Family Access Code', attorney:'Attorney Code' };
+  const eyes   = { funeral_home:'Funeral Home Enterprise', family:'Family Portal Access', attorney:'Legal / Attorney Access' };
+  document.getElementById('gen-eye').textContent   = eyes[type]   || 'Generate Code';
+  document.getElementById('gen-title').textContent = titles[type] || 'New Code';
+  document.getElementById('gen-result').style.display = 'none';
+  document.getElementById('gen-btn').style.display    = 'inline-flex';
+  document.getElementById('gen-err').classList.remove('show');
+  document.getElementById('gen-assigned').value = '';
+  document.getElementById('gen-notes').value    = '';
+  openModal('modal-gen');
+}
+
+async function generateCode() {
+  const assignedTo = v('gen-assigned');
+  const notes      = v('gen-notes');
+  const errEl      = document.getElementById('gen-err');
+  errEl.classList.remove('show');
+
+  const prefix = { funeral_home:'AG-ENT', family:'AG-FAM', attorney:'AG-LGL' }[genType] || 'AG';
+  const code = genCode(prefix);
+
+  const { error } = await sb.from('access_codes').insert({
+    code, account_type:genType,
+    assigned_to: assignedTo||null,
+    notes: notes||null
+  });
+
+  if (error) { errEl.textContent = '⚠ '+error.message; errEl.classList.add('show'); return; }
+
+  document.getElementById('gen-code-val').textContent = code;
+  document.getElementById('gen-result').style.display = 'block';
+  document.getElementById('gen-btn').style.display    = 'none';
+  toast(`✓ Code generated — click it to copy`);
+
+  const wrapMap = { funeral_home:'ent-wrap', family:'fam-wrap', attorney:'atty-wrap' };
+  loadCodes(genType, wrapMap[genType]);
+  loadStats();
+}
+
+// ── REVOKE CODE ───────────────────────────────────────────────────────
+async function revokeCode(id) {
+  if (!confirm('Revoke this code? It will no longer be valid for sign-up.')) return;
+  await sb.from('access_codes').delete().eq('id',id);
+  toast('✓ Code revoked');
+  loadSection(activeSec);
+}
+
+// ── HELPERS ───────────────────────────────────────────────────────────
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.addEventListener('click', e => {
+  if (e.target.classList.contains('overlay')) e.target.classList.remove('open');
+});
+
+function v(id) { return (document.getElementById(id)?.value||'').trim(); }
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/'/g,'&#39;'); }
+function fmt(d){ return d ? new Date(d).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '—'; }
+function genCode(prefix){ return prefix+'-'+Math.random().toString(36).substr(2,8).toUpperCase(); }
+function emptyHtml(icon, text){ return `<div class="empty"><div class="empty-icon">${icon}</div><div class="empty-text">${text}</div></div>`; }
+
+function roleTag(r) {
+  const m = {
+    family:      '<span class="tag tag-green">Family</span>',
+    funeral_home:'<span class="tag tag-gold">Funeral Home</span>',
+    attorney:    '<span class="tag tag-blue">Attorney</span>',
+    admin:       '<span class="tag tag-red">Admin</span>',
+  };
+  return m[r] || `<span class="tag tag-sage">${esc(r||'Unknown')}</span>`;
+}
+
+function copyVal(val) {
+  navigator.clipboard.writeText(val).then(()=> toast(`✓ Copied: ${val}`)).catch(()=>{});
+}
+
+function clearFHForm() {
+  ['fh-name','fh-contact','fh-email','fh-phone','fh-state','fh-address','fh-notes'].forEach(id=>{
+    const el = document.getElementById(id); if(el) el.value='';
+  });
+}
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 3200);
+}
+</script>
+</body>
+</html>
