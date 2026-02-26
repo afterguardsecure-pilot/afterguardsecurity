@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AfterGuard — Estate Records</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<!-- AUTH GUARD + USER INIT -->
+<script>
+(async () => {
+  const { createClient } = supabase;
+  const sb = createClient(
+    'https://bzscltliqeijqskcdajp.supabase.co',
+    'sb_publishable_LFfDCNnaH2PDo0auIBn9oA_td5dL5bD'
+  );
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) { window.location.replace('afterguard-auth.html'); return; }
+  window._sb = sb;
+  window._user = session.user;
+  document.addEventListener('DOMContentLoaded', () => {
+    const m = session.user.user_metadata || {};
+    const fn = m.first_name || ''; const ln = m.last_name || '';
+    const full = (fn + ' ' + ln).trim() || session.user.email;
+    const ini = ((fn[0]||'')+(ln[0]||'')).toUpperCase() || session.user.email[0].toUpperCase();
+    const role = m.account_type ? m.account_type.charAt(0).toUpperCase()+m.account_type.slice(1) : 'Member';
+    document.querySelectorAll('.user-name').forEach(e => e.textContent = full);
+    document.querySelectorAll('.user-role').forEach(e => e.textContent = role);
+    document.querySelectorAll('.user-avatar').forEach(e => e.textContent = ini);
+    initPage();
+  });
+})();
+async function handleSignOut() {
+  if (window._sb) await window._sb.auth.signOut();
+  window.location.replace('afterguard-auth.html');
+}
+</script>
+
+<style>
+:root {
+  --slate-950:#0a0c0f; --slate-900:#0f1318; --slate-800:#171d26;
+  --slate-700:#1f2937; --slate-600:#374151; --slate-400:#9ca3af;
+  --slate-300:#d1d5db; --slate-200:#e5e7eb;
+  --gold-400:#d4a853; --gold-300:#e2bb72; --gold-200:#f0d4a0; --gold-500:#b8922e;
+  --sage:#7a9e8e; --sage-light:#a3c4b5;
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--slate-950);color:var(--slate-300);font-family:'Cormorant Garamond',Georgia,serif;min-height:100vh;overflow-x:hidden;}
+
+/* SIDEBAR */
+.sidebar{position:fixed;left:0;top:0;bottom:0;width:240px;background:var(--slate-900);border-right:1px solid rgba(212,168,83,0.12);display:flex;flex-direction:column;z-index:100;}
+.logo{padding:28px 24px 24px;border-bottom:1px solid rgba(212,168,83,0.1);}
+.logo-mark{display:flex;align-items:center;gap:12px;margin-bottom:6px;}
+.logo-shield{width:32px;height:32px;background:rgba(212,168,83,0.1);border:1px solid rgba(212,168,83,0.25);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;}
+.logo-name{font-size:16px;font-weight:300;letter-spacing:0.12em;color:var(--gold-300);font-family:'Cormorant Garamond',serif;}
+.logo-tagline{font-size:10px;letter-spacing:0.2em;color:var(--slate-400);font-family:'DM Mono',monospace;text-transform:uppercase;margin-left:44px;}
+.nav{flex:1;padding:20px 0;overflow-y:auto;}
+.nav-section-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.25em;text-transform:uppercase;color:var(--slate-600);padding:0 24px;margin-bottom:8px;}
+.nav-item{display:flex;align-items:center;gap:12px;padding:10px 24px;transition:all 0.2s;font-size:15px;color:var(--slate-400);border-left:2px solid transparent;text-decoration:none;}
+.nav-item:hover{color:var(--slate-200);background:rgba(212,168,83,0.04);}
+.nav-item.active{color:var(--gold-300);border-left-color:var(--gold-400);background:rgba(212,168,83,0.06);}
+.nav-icon{font-size:15px;width:18px;text-align:center;flex-shrink:0;opacity:0.7;}
+.nav-item.active .nav-icon{opacity:1;}
+.badge{margin-left:auto;font-family:'DM Mono',monospace;font-size:10px;padding:2px 7px;border-radius:99px;background:rgba(192,57,43,0.2);color:#e57373;border:1px solid rgba(192,57,43,0.3);}
+.sidebar-footer{padding:16px 24px;border-top:1px solid rgba(212,168,83,0.08);}
+.user-card{display:flex;align-items:center;gap:10px;}
+.user-avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--gold-500),var(--sage));display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--slate-900);font-weight:600;flex-shrink:0;}
+.user-info{flex:1;min-width:0;}
+.user-name{font-size:14px;color:var(--slate-200);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.user-role{font-size:10px;font-family:'DM Mono',monospace;color:var(--slate-400);letter-spacing:0.1em;text-transform:uppercase;}
+.signout-btn{margin-top:10px;width:100%;background:transparent;border:1px solid rgba(212,168,83,0.12);border-radius:3px;color:var(--slate-400);font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;padding:7px;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:6px;}
+.signout-btn:hover{border-color:rgba(212,168,83,0.3);color:var(--gold-300);}
+
+/* MAIN */
+.main{margin-left:240px;min-height:100vh;display:flex;flex-direction:column;}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:20px 36px;border-bottom:1px solid rgba(212,168,83,0.08);background:var(--slate-950);position:sticky;top:0;z-index:50;backdrop-filter:blur(12px);}
+.page-eyebrow{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:var(--gold-400);margin-bottom:2px;}
+.page-title{font-size:26px;font-weight:300;color:var(--slate-200);font-family:'Cormorant Garamond',serif;letter-spacing:0.02em;}
+.topbar-right{display:flex;align-items:center;gap:8px;font-family:'DM Mono',monospace;font-size:10px;color:var(--slate-600);letter-spacing:0.1em;}
+.live-dot{width:7px;height:7px;border-radius:50%;background:var(--sage-light);box-shadow:0 0 5px var(--sage-light);}
+.content{padding:32px 36px;flex:1;}
+
+/* STAT CARDS */
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px;}
+.stat-card{background:var(--slate-900);border:1px solid rgba(212,168,83,0.1);border-radius:6px;padding:20px 22px;}
+.stat-val{font-family:'Cormorant Garamond',serif;font-size:2.4rem;font-weight:300;color:var(--slate-200);line-height:1;margin-bottom:4px;}
+.stat-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:var(--slate-600);}
+.stat-sub{font-family:'DM Mono',monospace;font-size:10px;margin-top:6px;color:var(--sage-light);}
+
+/* PANEL */
+.panel{background:var(--slate-900);border:1px solid rgba(212,168,83,0.1);border-radius:6px;margin-bottom:20px;overflow:hidden;}
+.panel-header{display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid rgba(212,168,83,0.08);}
+.panel-title{font-size:16px;font-weight:400;color:var(--slate-200);}
+.panel-eyebrow{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--gold-400);margin-bottom:3px;}
+.panel-body{padding:22px;}
+
+/* TABLE */
+.tbl{width:100%;border-collapse:collapse;}
+.tbl th{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--slate-600);padding:10px 14px;text-align:left;border-bottom:1px solid rgba(212,168,83,0.08);}
+.tbl td{padding:12px 14px;font-size:14px;border-bottom:1px solid rgba(255,255,255,0.03);vertical-align:middle;}
+.tbl tr:last-child td{border-bottom:none;}
+.tbl tr:hover td{background:rgba(212,168,83,0.02);}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:4px;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.08em;cursor:pointer;transition:all 0.2s;border:none;text-decoration:none;white-space:nowrap;}
+.btn:disabled{opacity:0.5;cursor:not-allowed;}
+.btn-ghost{background:transparent;color:var(--slate-400);border:1px solid var(--slate-700);}
+.btn-ghost:hover{color:var(--slate-200);border-color:var(--slate-500);}
+.btn-gold{background:rgba(212,168,83,0.12);border:1px solid rgba(212,168,83,0.3);color:var(--gold-300);}
+.btn-gold:hover{background:rgba(212,168,83,0.22);}
+.btn-solid{background:var(--gold-500);border:1px solid var(--gold-400);color:var(--slate-950);font-weight:500;}
+.btn-solid:hover{background:var(--gold-400);}
+.btn-danger{background:rgba(192,57,43,0.12);border:1px solid rgba(192,57,43,0.28);color:#ef9a9a;}
+.btn-danger:hover{background:rgba(192,57,43,0.22);}
+
+/* TAGS */
+.tag{display:inline-flex;align-items:center;font-family:'DM Mono',monospace;font-size:10px;padding:3px 9px;border-radius:99px;}
+.tag-green{background:rgba(45,106,79,0.15);color:var(--sage-light);border:1px solid rgba(45,106,79,0.25);}
+.tag-yellow{background:rgba(217,119,6,0.15);color:#fbbf24;border:1px solid rgba(217,119,6,0.25);}
+.tag-gold{background:rgba(212,168,83,0.1);color:var(--gold-300);border:1px solid rgba(212,168,83,0.2);}
+.tag-red{background:rgba(192,57,43,0.15);color:#ef9a9a;border:1px solid rgba(192,57,43,0.25);}
+
+/* FORM */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.field-group{margin-bottom:14px;}
+.field-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:var(--slate-400);margin-bottom:7px;display:block;}
+.field-input{width:100%;padding:10px 14px;background:var(--slate-800);border:1px solid rgba(212,168,83,0.1);border-radius:3px;color:var(--slate-200);font-family:'DM Mono',monospace;font-size:12px;outline:none;transition:border-color 0.2s;}
+.field-input:focus{border-color:rgba(212,168,83,0.4);}
+.field-input::placeholder{color:var(--slate-600);}
+select.field-input option{background:var(--slate-800);}
+
+/* UPLOAD ZONE */
+.upload-zone{border:1px dashed rgba(212,168,83,0.25);border-radius:6px;padding:32px 20px;text-align:center;cursor:pointer;transition:all 0.2s;background:rgba(212,168,83,0.02);}
+.upload-zone:hover,.upload-zone.dragover{border-color:rgba(212,168,83,0.5);background:rgba(212,168,83,0.05);}
+.upload-icon{font-size:28px;margin-bottom:10px;opacity:0.6;}
+.upload-label{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--slate-400);margin-bottom:6px;}
+.upload-sub{font-size:12px;color:var(--slate-600);}
+.upload-list{margin-top:12px;}
+.upload-item{display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--slate-800);border-radius:4px;margin-bottom:6px;font-size:13px;}
+.upload-item-name{flex:1;color:var(--slate-300);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.upload-item-size{font-family:'DM Mono',monospace;font-size:10px;color:var(--slate-600);flex-shrink:0;}
+.upload-item-remove{background:none;border:none;cursor:pointer;color:var(--slate-600);font-size:14px;transition:color 0.2s;padding:0 2px;flex-shrink:0;}
+.upload-item-remove:hover{color:#ef9a9a;}
+
+/* PROGRESS */
+.progress-wrap{margin-top:10px;display:none;}
+.progress-bar{height:3px;background:rgba(255,255,255,0.06);border-radius:3px;overflow:hidden;}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--gold-500),var(--gold-300));border-radius:3px;width:0%;transition:width 0.25s;}
+.progress-label{font-family:'DM Mono',monospace;font-size:10px;color:var(--slate-600);margin-top:6px;}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:1000;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
+.modal-overlay.hidden{display:none;}
+.modal{background:var(--slate-900);border:1px solid rgba(212,168,83,0.2);border-radius:8px;width:100%;max-width:540px;max-height:92vh;overflow-y:auto;box-shadow:0 32px 80px rgba(0,0,0,0.6);}
+.modal-header{display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid rgba(212,168,83,0.08);}
+.modal-title{font-size:18px;font-weight:400;color:var(--slate-200);}
+.modal-eyebrow{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:var(--gold-400);margin-bottom:3px;}
+.modal-close{background:none;border:none;color:var(--slate-600);font-size:20px;cursor:pointer;transition:color 0.2s;line-height:1;padding:4px;}
+.modal-close:hover{color:var(--slate-200);}
+.modal-body{padding:24px;}
+.modal-footer{padding:16px 24px;border-top:1px solid rgba(212,168,83,0.08);display:flex;gap:10px;justify-content:flex-end;}
+
+/* ALERT / TOAST */
+.alert{padding:11px 14px;border-radius:4px;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.05em;margin-bottom:16px;display:none;align-items:center;gap:8px;}
+.alert.error{background:rgba(192,57,43,0.15);border:1px solid rgba(192,57,43,0.3);color:#ef9a9a;display:flex;}
+.alert.success{background:rgba(45,106,79,0.15);border:1px solid rgba(45,106,79,0.3);color:var(--sage-light);display:flex;}
+.toast{position:fixed;bottom:32px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--slate-800);border:1px solid rgba(212,168,83,0.2);color:var(--slate-200);padding:12px 22px;border-radius:4px;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.06em;opacity:0;transition:opacity 0.3s,transform 0.3s;pointer-events:none;z-index:9999;white-space:nowrap;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+/* EMPTY STATE */
+.empty-state{text-align:center;padding:52px 20px;}
+.empty-icon{font-size:32px;margin-bottom:12px;opacity:0.35;}
+.empty-text{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:var(--slate-600);margin-bottom:20px;}
+
+/* DOC LIST */
+.doc-row{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.03);}
+.doc-row:last-child{border-bottom:none;}
+.doc-row:hover{background:rgba(212,168,83,0.02);}
+.doc-icon-lrg{font-size:20px;flex-shrink:0;}
+.doc-name{flex:1;font-size:14px;color:var(--slate-300);}
+.doc-type{font-family:'DM Mono',monospace;font-size:10px;color:var(--gold-400);flex-shrink:0;}
+.doc-date{font-family:'DM Mono',monospace;font-size:10px;color:var(--slate-600);flex-shrink:0;margin-right:8px;}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="logo">
+    <div class="logo-mark">
+      <div class="logo-shield">🛡</div>
+      <span class="logo-name">AfterGuard</span>
+    </div>
+    <div class="logo-tagline">Secure Portal</div>
+  </div>
+  <nav class="nav">
+    <div class="nav-section-label">Monitor</div>
+    <a href="vigil-security.html" class="nav-item"><span class="nav-icon">🏠</span>Overview</a>
+    <div class="nav-section-label">Security</div>
+    <a href="alerts.html" class="nav-item"><span class="nav-icon">🔔</span>Alerts<span class="badge">3</span></a>
+    <a href="threats.html" class="nav-item"><span class="nav-icon">⚡</span>Threats<span class="badge">2</span></a>
+    <a href="threat-intel.html" class="nav-item"><span class="nav-icon">🔍</span>Threat Intel</a>
+    <div class="nav-section-label">Access</div>
+    <a href="access-control.html" class="nav-item"><span class="nav-icon">🔐</span>Access Control</a>
+    <div class="nav-section-label">Records</div>
+    <a href="estate-records.html" class="nav-item active"><span class="nav-icon">📂</span>Estate Records</a>
+    <a href="family-portals.html" class="nav-item"><span class="nav-icon">👨‍👩‍👧</span>Family Portals</a>
+    <div class="nav-section-label">Compliance</div>
+    <a href="audit-log.html" class="nav-item"><span class="nav-icon">📋</span>Audit Log</a>
+    <a href="staff-roles.html" class="nav-item"><span class="nav-icon">👥</span>Staff & Roles</a>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="user-card">
+      <div class="user-avatar">?</div>
+      <div class="user-info">
+        <div class="user-name">Loading…</div>
+        <div class="user-role">Member</div>
+      </div>
+    </div>
+    <button class="signout-btn" onclick="handleSignOut()">→ Sign Out</button>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <div>
+      <div class="page-eyebrow">Records · Secure Document Vault</div>
+      <div class="page-title">Estate Records</div>
+    </div>
+    <div class="topbar-right">
+      <span class="live-dot"></span>
+      <span>LIVE · ENCRYPTED</span>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- STATS -->
+    <div class="grid-4">
+      <div class="stat-card">
+        <div class="stat-val" id="stat-estates">—</div>
+        <div class="stat-label">Active Estates</div>
+        <div class="stat-sub" id="stat-estates-sub">Loading…</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val" id="stat-docs">—</div>
+        <div class="stat-label">Documents Stored</div>
+        <div class="stat-sub">All AES-256 encrypted</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val" id="stat-members">—</div>
+        <div class="stat-label">Family Members</div>
+        <div class="stat-sub">With portal access</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val">AES</div>
+        <div class="stat-label">Encryption</div>
+        <div class="stat-sub">✓ 256-bit Active</div>
+      </div>
+    </div>
+
+    <!-- ESTATES TABLE -->
+    <div class="panel">
+      <div class="panel-header">
+        <div>
+          <div class="panel-eyebrow">Document Vault</div>
+          <div class="panel-title">Your Estate Portals</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input class="field-input" style="width:210px;padding:7px 12px"
+            placeholder="Search by name or file #…"
+            oninput="filterEstates(this.value)">
+          <button class="btn btn-solid" onclick="openModal()">+ New Estate</button>
+        </div>
+      </div>
+      <div id="estates-wrap">
+        <div class="empty-state">
+          <div class="empty-icon">⏳</div>
+          <div class="empty-text">Loading estates…</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DOCUMENTS VIEW (shown when user clicks View Docs) -->
+    <div class="panel" id="docs-panel" style="display:none">
+      <div class="panel-header">
+        <div>
+          <div class="panel-eyebrow">Estate Documents</div>
+          <div class="panel-title" id="docs-title">Documents</div>
+        </div>
+        <button class="btn btn-ghost" onclick="closeDocs()">✕ Close</button>
+      </div>
+      <div id="docs-wrap">
+        <div class="empty-state">
+          <div class="empty-icon">📄</div>
+          <div class="empty-text">No documents yet</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- UPLOAD PANEL -->
+    <div class="panel">
+      <div class="panel-header">
+        <div>
+          <div class="panel-eyebrow">Secure Upload · AES-256</div>
+          <div class="panel-title">Upload Estate Documents</div>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div class="alert" id="upload-err">⚠ <span id="upload-err-msg"></span></div>
+        <div class="alert" id="upload-ok">✓ Documents uploaded successfully to the encrypted vault</div>
+        <div class="grid-2">
+          <div>
+            <div class="field-group">
+              <label class="field-label">Select Estate *</label>
+              <select class="field-input" id="sel-estate">
+                <option value="">— Choose an estate —</option>
+              </select>
+            </div>
+            <div class="field-group">
+              <label class="field-label">Document Type *</label>
+              <select class="field-input" id="sel-doc-type">
+                <option>Death Certificate</option>
+                <option>Will / Testament</option>
+                <option>Insurance Policy</option>
+                <option>Property Deed</option>
+                <option>Bank Records</option>
+                <option>Medical Records</option>
+                <option>Legal Correspondence</option>
+                <option>Other</option>
+              </select>
+            </div>
+            <div class="field-group">
+              <label class="field-label">Notes (optional)</label>
+              <textarea class="field-input" id="upload-notes" rows="3"
+                placeholder="Optional description of these documents…"
+                style="resize:vertical"></textarea>
+            </div>
+          </div>
+          <div>
+            <label class="field-label">Files</label>
+            <div class="upload-zone" id="estate-zone"
+              style="height:198px;display:flex;flex-direction:column;justify-content:center">
+              <div class="upload-icon">📂</div>
+              <div class="upload-label">Drop files here or click to browse</div>
+              <div class="upload-sub">PDF, DOCX, JPG, PNG — max 50 MB per file</div>
+            </div>
+            <input type="file" id="estate-input" multiple style="display:none">
+            <div class="upload-list" id="estate-list"></div>
+            <div class="progress-wrap" id="progress-wrap">
+              <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+              <div class="progress-label" id="progress-label">Uploading…</div>
+            </div>
+          </div>
+        </div>
+        <button class="btn btn-solid" style="margin-top:8px;padding:11px 28px"
+          id="upload-btn" onclick="uploadDocuments()">
+          🔒 Upload to Vault
+        </button>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<!-- NEW ESTATE MODAL -->
+<div class="modal-overlay hidden" id="modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-eyebrow">Create New Portal</div>
+        <div class="modal-title">New Estate</div>
+      </div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="alert" id="modal-err">⚠ <span id="modal-err-msg"></span></div>
+      <div class="field-group">
+        <label class="field-label">Full Name of Deceased *</label>
+        <input class="field-input" id="f-name" placeholder="e.g. Robert A. Whitmore">
+      </div>
+      <div class="grid-2">
+        <div class="field-group">
+          <label class="field-label">Date of Passing *</label>
+          <input class="field-input" id="f-dop" type="date">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Status</label>
+          <select class="field-input" id="f-status">
+            <option value="active">Active</option>
+            <option value="pending">Pending</option>
+            <option value="closed">Closed</option>
+          </select>
+        </div>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Funeral Home (optional)</label>
+        <input class="field-input" id="f-fh" placeholder="e.g. Henderson Funeral Services">
+      </div>
+      <div class="field-group">
+        <label class="field-label">Notes (optional)</label>
+        <textarea class="field-input" id="f-notes" rows="3"
+          placeholder="Any additional information about this estate…"
+          style="resize:vertical"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-solid" id="create-btn" onclick="createEstate()">
+        Create Estate Portal
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ── STATE ──────────────────────────────────────────────────────────────
+let allEstates = [];
+let pendingFiles = [];
+let activeEstateId = null;
+let activeEstateName = null;
+
+// ── INIT ───────────────────────────────────────────────────────────────
+async function initPage() {
+  await loadEstates();
+  initUploadZone();
+}
+
+// ── LOAD ESTATES ───────────────────────────────────────────────────────
+async function loadEstates() {
+  const { data, error } = await window._sb
+    .from('estates')
+    .select('*')
+    .eq('owner_id', window._user.id)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    document.getElementById('estates-wrap').innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">⚠</div>
+        <div class="empty-text">Error: ${error.message}</div>
+      </div>`;
+    return;
+  }
+
+  allEstates = data || [];
+  renderTable(allEstates);
+  populateDropdown();
+  await refreshStats();
+}
+
+// ── RENDER TABLE ───────────────────────────────────────────────────────
+function renderTable(list) {
+  const wrap = document.getElementById('estates-wrap');
+  if (list.length === 0) {
+    wrap.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">📂</div>
+        <div class="empty-text">No estates yet — create your first portal</div>
+        <button class="btn btn-solid" onclick="openModal()">+ New Estate</button>
+      </div>`;
+    return;
+  }
+
+  const rows = list.map(e => {
+    const created = new Date(e.created_at).toLocaleDateString('en-US',
+      { month: 'short', day: 'numeric', year: 'numeric' });
+    const statusTag = {
+      active:  '<span class="tag tag-green">Active</span>',
+      pending: '<span class="tag tag-yellow">Pending</span>',
+      closed:  '<span class="tag tag-gold">Closed</span>'
+    }[e.status || 'active'];
+
+    return `
+      <tr>
+        <td><span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--gold-400)">${e.file_number || '—'}</span></td>
+        <td style="font-weight:400;color:var(--slate-200)">${e.deceased_name || '—'}</td>
+        <td style="font-family:'DM Mono',monospace;font-size:11px">${created}</td>
+        <td>${e.funeral_home || '<span style="color:var(--slate-600)">—</span>'}</td>
+        <td>${statusTag}</td>
+        <td>
+          <div style="display:flex;gap:6px">
+            <button class="btn btn-gold" style="padding:4px 12px;font-size:10px"
+              onclick="viewDocs('${e.id}','${escHtml(e.deceased_name)}')">
+              📄 View Docs
+            </button>
+            <button class="btn btn-danger" style="padding:4px 10px;font-size:10px"
+              onclick="deleteEstate('${e.id}','${escHtml(e.deceased_name)}')">
+              ✕
+            </button>
+          </div>
+        </td>
+      </tr>`;
+  }).join('');
+
+  wrap.innerHTML = `
+    <table class="tbl">
+      <thead><tr>
+        <th>File #</th><th>Deceased</th><th>Created</th>
+        <th>Funeral Home</th><th>Status</th><th>Actions</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+}
+
+// ── FILTER ─────────────────────────────────────────────────────────────
+function filterEstates(q) {
+  q = q.toLowerCase();
+  renderTable(allEstates.filter(e =>
+    (e.deceased_name||'').toLowerCase().includes(q) ||
+    (e.file_number||'').toLowerCase().includes(q) ||
+    (e.funeral_home||'').toLowerCase().includes(q)
+  ));
+}
+
+// ── STATS ──────────────────────────────────────────────────────────────
+async function refreshStats() {
+  document.getElementById('stat-estates').textContent = allEstates.length;
+  document.getElementById('stat-estates-sub').textContent =
+    allEstates.length === 1 ? '1 portal' : `${allEstates.length} portals`;
+
+  if (allEstates.length === 0) {
+    document.getElementById('stat-docs').textContent = '0';
+    document.getElementById('stat-members').textContent = '0';
+    return;
+  }
+
+  const ids = allEstates.map(e => e.id);
+
+  const { count: docCount } = await window._sb
+    .from('documents').select('id', { count: 'exact', head: true }).in('estate_id', ids);
+  document.getElementById('stat-docs').textContent = docCount || 0;
+
+  const { count: memCount } = await window._sb
+    .from('estate_members').select('id', { count: 'exact', head: true }).in('estate_id', ids);
+  document.getElementById('stat-members').textContent = memCount || 0;
+}
+
+// ── DROPDOWN ───────────────────────────────────────────────────────────
+function populateDropdown() {
+  const sel = document.getElementById('sel-estate');
+  sel.innerHTML = '<option value="">— Choose an estate —</option>';
+  allEstates.forEach(e => {
+    const o = document.createElement('option');
+    o.value = e.id;
+    o.textContent = `${e.deceased_name} · ${e.file_number || 'No file #'}`;
+    sel.appendChild(o);
+  });
+}
+
+// ── MODAL ──────────────────────────────────────────────────────────────
+function openModal() {
+  document.getElementById('modal').classList.remove('hidden');
+  document.getElementById('f-name').focus();
+  hideEl('modal-err');
+}
+function closeModal() {
+  document.getElementById('modal').classList.add('hidden');
+  ['f-name','f-dop','f-fh','f-notes'].forEach(id =>
+    document.getElementById(id).value = '');
+}
+document.getElementById('modal').addEventListener('click', e => {
+  if (e.target === document.getElementById('modal')) closeModal();
+});
+
+// ── CREATE ESTATE ──────────────────────────────────────────────────────
+async function createEstate() {
+  const name   = document.getElementById('f-name').value.trim();
+  const dop    = document.getElementById('f-dop').value;
+  const fh     = document.getElementById('f-fh').value.trim();
+  const notes  = document.getElementById('f-notes').value.trim();
+  const status = document.getElementById('f-status').value;
+
+  hideEl('modal-err');
+  if (!name) { showErr('modal-err','modal-err-msg','Please enter the name of the deceased.'); return; }
+  if (!dop)  { showErr('modal-err','modal-err-msg','Please enter the date of passing.'); return; }
+
+  const btn = document.getElementById('create-btn');
+  btn.textContent = 'Creating…'; btn.disabled = true;
+
+  const fileNum = `AG-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+
+  const { data, error } = await window._sb.from('estates').insert({
+    owner_id: window._user.id,
+    deceased_name: name,
+    date_of_passing: dop,
+    file_number: fileNum,
+    funeral_home: fh || null,
+    notes: notes || null,
+    status
+  }).select().single();
+
+  btn.textContent = 'Create Estate Portal'; btn.disabled = false;
+
+  if (error) { showErr('modal-err','modal-err-msg', error.message); return; }
+
+  await logAudit(data.id, `Estate portal created for ${name}`);
+  closeModal();
+  toast(`✓ Estate portal created — ${fileNum}`);
+  await loadEstates();
+}
+
+// ── DELETE ESTATE ──────────────────────────────────────────────────────
+async function deleteEstate(id, name) {
+  if (!confirm(`Delete estate portal for "${name}"? This cannot be undone.`)) return;
+
+  const { error } = await window._sb.from('estates').delete().eq('id', id);
+  if (error) { toast('⚠ Could not delete: ' + error.message); return; }
+  await logAudit(id, `Estate portal deleted for ${name}`);
+  toast(`✓ Estate "${name}" removed`);
+  await loadEstates();
+}
+
+// ── VIEW DOCS ──────────────────────────────────────────────────────────
+async function viewDocs(estateId, estateName) {
+  activeEstateId = estateId;
+  activeEstateName = estateName;
+
+  // Auto-select in upload dropdown
+  document.getElementById('sel-estate').value = estateId;
+
+  const panel = document.getElementById('docs-panel');
+  panel.style.display = 'block';
+  document.getElementById('docs-title').textContent = `${estateName} — Documents`;
+  document.getElementById('docs-wrap').innerHTML =
+    '<div class="empty-state"><div class="empty-icon">⏳</div><div class="empty-text">Loading documents…</div></div>';
+
+  panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  const { data, error } = await window._sb
+    .from('documents')
+    .select('*')
+    .eq('estate_id', estateId)
+    .order('created_at', { ascending: false });
+
+  if (error || !data || data.length === 0) {
+    document.getElementById('docs-wrap').innerHTML =
+      '<div class="empty-state"><div class="empty-icon">📄</div><div class="empty-text">No documents uploaded yet</div></div>';
+    return;
+  }
+
+  const rows = data.map(doc => {
+    const date = new Date(doc.created_at).toLocaleDateString('en-US',
+      { month: 'short', day: 'numeric', year: 'numeric' });
+    const icons = {
+      'Death Certificate': '📜', 'Will / Testament': '📝',
+      'Insurance Policy': '🛡', 'Property Deed': '🏠',
+      'Bank Records': '🏦', 'Medical Records': '🏥',
+      'Legal Correspondence': '⚖️', 'Other': '📄'
+    };
+    const icon = icons[doc.doc_type] || '📄';
+    return `
+      <div class="doc-row">
+        <span class="doc-icon-lrg">${icon}</span>
+        <span class="doc-name">${doc.file_name}</span>
+        <span class="doc-type">${doc.doc_type || 'Document'}</span>
+        <span class="doc-date">${date}</span>
+        <button class="btn btn-gold" style="padding:4px 12px;font-size:10px"
+          onclick="downloadDoc('${doc.file_path}','${escHtml(doc.file_name)}')">
+          ↓ Download
+        </button>
+        <button class="btn btn-danger" style="padding:4px 10px;font-size:10px"
+          onclick="deleteDoc('${doc.id}','${doc.file_path}','${escHtml(doc.file_name)}')">
+          ✕
+        </button>
+      </div>`;
+  }).join('');
+
+  document.getElementById('docs-wrap').innerHTML = rows;
+}
+
+function closeDocs() {
+  document.getElementById('docs-panel').style.display = 'none';
+  activeEstateId = null;
+}
+
+// ── DOWNLOAD DOC ───────────────────────────────────────────────────────
+async function downloadDoc(path, name) {
+  const { data, error } = await window._sb.storage
+    .from('estate-documents').download(path);
+  if (error) { toast('⚠ Could not download file'); return; }
+  const url = URL.createObjectURL(data);
+  const a = document.createElement('a');
+  a.href = url; a.download = name;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ── DELETE DOC ─────────────────────────────────────────────────────────
+async function deleteDoc(docId, filePath, fileName) {
+  if (!confirm(`Delete "${fileName}"? This cannot be undone.`)) return;
+  await window._sb.storage.from('estate-documents').remove([filePath]);
+  await window._sb.from('documents').delete().eq('id', docId);
+  toast(`✓ "${fileName}" deleted`);
+  if (activeEstateId) viewDocs(activeEstateId, activeEstateName);
+  await refreshStats();
+}
+
+// ── UPLOAD ZONE INIT ───────────────────────────────────────────────────
+function initUploadZone() {
+  const zone  = document.getElementById('estate-zone');
+  const input = document.getElementById('estate-input');
+
+  zone.addEventListener('click', () => input.click());
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+  zone.addEventListener('drop', e => {
+    e.preventDefault(); zone.classList.remove('dragover');
+    addFiles(e.dataTransfer.files);
+  });
+  input.addEventListener('change', () => addFiles(input.files));
+}
+
+function addFiles(files) {
+  Array.from(files).forEach(f => {
+    if (f.size > 50 * 1024 * 1024) { toast(`⚠ ${f.name} exceeds 50 MB limit`); return; }
+    if (pendingFiles.find(p => p.name === f.name)) return;
+    pendingFiles.push(f);
+  });
+  renderFileList();
+}
+
+function renderFileList() {
+  const list = document.getElementById('estate-list');
+  list.innerHTML = pendingFiles.map((f, i) => `
+    <div class="upload-item">
+      <span>📄</span>
+      <span class="upload-item-name">${f.name}</span>
+      <span class="upload-item-size">${(f.size / 1024).toFixed(0)} KB</span>
+      <button class="upload-item-remove" onclick="removeFile(${i})">✕</button>
+    </div>`).join('');
+}
+
+function removeFile(i) {
+  pendingFiles.splice(i, 1);
+  renderFileList();
+}
+
+// ── UPLOAD DOCUMENTS ───────────────────────────────────────────────────
+async function uploadDocuments() {
+  const estateId = document.getElementById('sel-estate').value;
+  const docType  = document.getElementById('sel-doc-type').value;
+  const notes    = document.getElementById('upload-notes').value.trim();
+
+  hideEl('upload-err'); hideEl('upload-ok');
+
+  if (!estateId) { showErr('upload-err','upload-err-msg','Please select an estate first.'); return; }
+  if (pendingFiles.length === 0) { showErr('upload-err','upload-err-msg','Please add at least one file.'); return; }
+
+  const btn = document.getElementById('upload-btn');
+  btn.textContent = 'Uploading…'; btn.disabled = true;
+
+  const pw = document.getElementById('progress-wrap');
+  const pf = document.getElementById('progress-fill');
+  const pl = document.getElementById('progress-label');
+  pw.style.display = 'block';
+
+  let uploaded = 0;
+  const errors = [];
+
+  for (const file of pendingFiles) {
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const path = `${window._user.id}/${estateId}/${Date.now()}_${safeName}`;
+
+    pl.textContent = `Uploading ${file.name}…`;
+
+    const { error: storageErr } = await window._sb.storage
+      .from('estate-documents').upload(path, file, { upsert: false });
+
+    if (storageErr) { errors.push(file.name); continue; }
+
+    await window._sb.from('documents').insert({
+      estate_id: estateId,
+      uploaded_by: window._user.id,
+      file_name: file.name,
+      file_path: path,
+      doc_type: docType,
+      notes: notes || null
+    });
+
+    await logAudit(estateId, `Document uploaded: ${file.name} (${docType})`);
+
+    uploaded++;
+    pf.style.width = `${(uploaded / pendingFiles.length) * 100}%`;
+  }
+
+  btn.textContent = '🔒 Upload to Vault'; btn.disabled = false;
+  pw.style.display = 'none'; pf.style.width = '0%';
+
+  if (errors.length > 0) {
+    showErr('upload-err','upload-err-msg',
+      `Failed to upload: ${errors.join(', ')}`);
+  }
+
+  if (uploaded > 0) {
+    document.getElementById('upload-ok').style.display = 'flex';
+    document.getElementById('upload-notes').value = '';
+    pendingFiles = [];
+    renderFileList();
+    toast(`✓ ${uploaded} file${uploaded > 1 ? 's' : ''} uploaded to vault`);
+    await refreshStats();
+    if (activeEstateId === estateId) viewDocs(estateId, activeEstateName);
+  }
+}
+
+// ── AUDIT LOG ──────────────────────────────────────────────────────────
+async function logAudit(estateId, event) {
+  await window._sb.from('audit_events').insert({
+    estate_id: estateId,
+    user_id: window._user.id,
+    event
+  }).catch(() => {}); // non-blocking
+}
+
+// ── HELPERS ────────────────────────────────────────────────────────────
+function toast(msg, dur = 3000) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), dur);
+}
+function hideEl(id) {
+  const el = document.getElementById(id);
+  if (el) { el.style.display = 'none'; el.classList.remove('error','success'); }
+}
+function showErr(alertId, msgId, msg) {
+  const el = document.getElementById(alertId);
+  document.getElementById(msgId).textContent = msg;
+  el.style.display = 'flex';
+  el.classList.add('error');
+}
+function escHtml(str) {
+  return (str || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+}
+</script>
+
+<!-- One SQL fix: estates table needs funeral_home and notes columns -->
+<!-- Run this in Supabase SQL editor if you get column errors:
+alter table estates add column if not exists funeral_home text;
+alter table estates add column if not exists notes text;
+alter table estates add column if not exists status text default 'active';
+alter table documents add column if not exists notes text;
+-->
+
+</body>
+</html>
